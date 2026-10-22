@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>English Mistake Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (max 880px). Proofreader's markup: what you said is struck in red, the fix is written in green ink beneath it. */
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8;
+  --strike:#BF3328; --fix:#1D6B58; --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4;
+  --display:"Newsreader", Georgia, "Times New Roman", serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
+    --strike:#F07A6E; --fix:#5CC6A6; --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
+  --strike:#F07A6E; --fix:#5CC6A6; --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.wrap{max-width:880px;margin:0 auto;padding-block:max(32px, env(safe-area-inset-top, 0px)) 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:flex;flex-direction:column;gap:28px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.1;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:600;font-size:22px;margin:0}
+.lede{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.note{background:var(--accent-soft);color:var(--ink);padding:10px 14px;border-radius:8px;font-size:14px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat b{display:block;font-family:var(--display);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.bars{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.bar{display:grid;grid-template-columns:170px 1fr 28px;gap:10px;align-items:center;font-size:13.5px}
+.bar .track{height:8px;background:var(--chip);border-radius:4px;overflow:hidden}
+.bar .fill{height:100%;background:var(--accent);border-radius:4px}
+.bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 14px;font:500 15px var(--body);color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* form */
+details.add{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+details.add summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none}
+details.add summary::-webkit-details-marker{display:none}
+details.add summary::before{content:"+ ";color:var(--accent)}
+details.add[open] summary::before{content:"− "}
+form{display:grid;gap:12px;padding:0 16px 16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:44px}
+input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px var(--body);padding:8px 14px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* filters */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13px var(--body);padding:5px 11px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.filters .grow{flex:1 1 200px;min-width:0}
+
+/* entries */
+.list{display:flex;flex-direction:column;gap:10px}
+.entry{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:8px;min-width:0}
+.said{font-family:var(--display);font-size:18px;color:var(--strike);text-decoration:line-through;text-decoration-thickness:1.5px;overflow-wrap:anywhere}
+.better{font-family:var(--display);font-size:19px;color:var(--fix);overflow-wrap:anywhere}
+.better::before{content:"→ ";color:var(--muted)}
+.why{color:var(--muted);font-size:14px;margin:0;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px}
+.cat{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:var(--chip);padding:3px 8px;border-radius:4px;color:var(--muted)}
+.status{appearance:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font:500 12px var(--body);cursor:pointer;background:var(--surface);color:var(--ink)}
+.status[data-s="new"]{border-color:var(--strike);color:var(--strike)}
+.status[data-s="learning"]{border-color:var(--accent);color:var(--accent)}
+.status[data-s="mastered"]{border-color:var(--fix);color:var(--fix)}
+.meta .spacer{flex:1}
+.del{appearance:none;background:none;border:0;color:var(--muted);font:12.5px var(--body);cursor:pointer;padding:3px 4px}
+.del.armed{color:var(--strike);font-weight:600}
+.empty{text-align:center;color:var(--muted);padding:36px 12px;border:1px dashed var(--line);border-radius:10px}
+
+/* drill */
+.drill{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;display:grid;gap:14px}
+.drill .prompt{font-family:var(--display);font-size:24px;line-height:1.3;overflow-wrap:anywhere}
+.drill .answer{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:14px}
+.drill .actions{display:flex;flex-wrap:wrap;gap:8px}
+.reps{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+@media (max-width:560px){
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .stat{padding:10px 12px}
+  .stat b{font-size:24px}
+  .row2{grid-template-columns:1fr}
+  .bar{grid-template-columns:120px 1fr 24px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+body{margin:0}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="label">Personal log</div>
+    <h1>English Mistake Notebook</h1>
+    <p class="lede">Synced with GitHub, so Claude can read and update it too. Log the phrases that came out wrong, write down the natural version, and drill them until they stick. Three correct drills in a row marks a mistake as mastered.</p>
+  </header>
+
+  <div id="notice" class="note" hidden></div>
+
+  <div class="filters"><button class="btn" id="exportBtn" type="button">Export backup</button><button class="btn" id="refreshBtn" type="button">Reload</button><button class="btn" id="settingsBtn" type="button">Settings</button></div>
+  <form id="settingsForm" class="settings" hidden style="padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:10px">
+    <div class="label">GitHub connection (saved in this browser only)</div>
+    <div class="row2">
+      <label class="f">GitHub username<input id="sOwner" autocomplete="off"></label>
+      <label class="f">Repository<input id="sRepo" placeholder="english-notebook-data" autocomplete="off"></label>
+    </div>
+    <label class="f">Access token (fine-grained, Contents: read and write, this repo only)<input id="sToken" type="password" autocomplete="off"></label>
+    <div><button class="btn primary" type="submit">Save and connect</button></div>
+  </form>
+  <div style="display:none"></div>
+
+  <section class="stats" aria-label="Progress">
+    <div class="stat"><span class="label">Logged</span><b id="sTotal">0</b></div>
+    <div class="stat"><span class="label">Still learning</span><b id="sOpen">0</b></div>
+    <div class="stat"><span class="label">Mastered</span><b id="sDone">0</b></div>
+  </section>
+
+  <section class="bars" id="bars" aria-label="Mistakes by type"></section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tabLog" aria-selected="true">Log</button>
+    <button class="tab" role="tab" id="tabDrill" aria-selected="false">Drill</button>
+  </nav>
+
+  <section id="viewLog" style="display:grid;gap:16px">
+    <details class="add" id="addBox">
+      <summary>Add a mistake</summary>
+      <form id="addForm">
+        <label class="f">What I said
+          <textarea id="fSaid" required placeholder="So how can I get away from it?"></textarea></label>
+        <label class="f">Natural version
+          <textarea id="fBetter" required placeholder="So how do I get past this plateau?"></textarea></label>
+        <label class="f">Why it sounds off
+          <textarea id="fWhy" placeholder="&quot;Get away from&quot; is for escaping places or people, not a skill level."></textarea></label>
+        <div class="row2">
+          <label class="f">Type<select id="fCat"></select></label>
+          <div style="display:flex;align-items:end;justify-content:flex-end"><button class="btn primary" type="submit" id="fSubmit">Save mistake</button></div>
+        </div>
+      </form>
+    </details>
+
+    <div class="filters" id="catFilters"></div>
+    <div class="filters">
+      <select id="statusFilter" aria-label="Filter by status" style="width:auto">
+        <option value="all">All statuses</option>
+        <option value="new">New</option>
+        <option value="learning">Learning</option>
+        <option value="mastered">Mastered</option>
+      </select>
+      <input class="grow" id="search" type="search" placeholder="Search phrases">
+    </div>
+
+    <div class="list" id="list">
+      
+    </div>
+  </section>
+
+  <section id="viewDrill" hidden>
+    <div class="drill" id="drill"></div>
+  </section>
+</div>
+
+<script>
+const CATS = {
+  literal: "Literal translation",
+  order: "Word order",
+  articles: "Articles & countables",
+  logic: "Fragments & logic",
+  stiff: "Wordy or stiff",
+  spelling: "Spelling"
+};
+const STATUS_NEXT = { new: "learning", learning: "mastered", mastered: "new" };
+const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
+
+const KEY = "english-mistake-notebook";
+let db = true, canWrite = false, items = [];
+const filter = { cat: "all", status: "all", q: "" };
+let drillItem = null, drillRevealed = false;
+
+const $ = id => document.getElementById(id);
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const c of kids) if (c) n.append(c);
+  return n;
+}
+function notice(msg) { const n = $("notice"); n.textContent = msg; n.hidden = !msg; }
+
+// category controls
+for (const [k, v] of Object.entries(CATS)) $("fCat").append(el("option", { value: k, text: v }));
+function renderCatChips() {
+  const box = $("catFilters"); box.textContent = "";
+  for (const [k, v] of [["all", "All types"], ...Object.entries(CATS)]) {
+    box.append(el("button", { class: "chip", "aria-pressed": String(filter.cat === k), text: v,
+      onclick: () => { filter.cat = k; renderCatChips(); renderList(); } }));
+  }
+}
+
+function render() { renderStats(); renderList(); if (!$("viewDrill").hidden) renderDrill(); }
+
+function renderStats() {
+  const done = items.filter(i => i.status === "mastered").length;
+  $("sTotal").textContent = items.length;
+  $("sOpen").textContent = items.length - done;
+  $("sDone").textContent = done;
+  const counts = Object.keys(CATS).map(k => [k, items.filter(i => i.category === k && i.status !== "mastered").length]);
+  const max = Math.max(1, ...counts.map(c => c[1]));
+  const bars = $("bars"); bars.textContent = "";
+  bars.append(el("div", { class: "label", text: "Open mistakes by type" }));
+  for (const [k, n] of counts) {
+    const fill = el("div", { class: "fill" }); fill.style.width = (n / max * 100) + "%";
+    bars.append(el("div", { class: "bar" }, el("span", { text: CATS[k] }), el("div", { class: "track" }, fill), el("span", { class: "n", text: String(n) })));
+  }
+}
+
+function visible() {
+  const q = filter.q.toLowerCase();
+  return items.filter(i =>
+    (filter.cat === "all" || i.category === filter.cat) &&
+    (filter.status === "all" || i.status === filter.status) &&
+    (!q || [i.said, i.better, i.why].some(s => (s || "").toLowerCase().includes(q))));
+}
+
+function renderList() {
+  const list = $("list"); list.textContent = "";
+  if (!db) { list.append(el("div", { class: "empty", text: "Your notebook appears here once it connects." })); return; }
+  const rows = visible();
+  if (!items.length) { list.append(el("div", { class: "empty", text: "No mistakes logged yet. Open “Add a mistake” above to save your first one." })); return; }
+  if (!rows.length) { list.append(el("div", { class: "empty", text: "Nothing matches these filters." })); return; }
+  for (const i of rows) {
+    const status = el("button", { class: "status", "data-s": i.status, text: STATUS_LABEL[i.status] || "New",
+      title: "Change status", onclick: () => save(i.id, { status: STATUS_NEXT[i.status] || "learning", reps: 0 }) });
+    if (!canWrite) status.disabled = true;
+    const del = el("button", { class: "del", text: "Delete" });
+    del.addEventListener("click", () => {
+      if (del.classList.contains("armed")) { remove(i.id); return; }
+      del.classList.add("armed"); del.textContent = "Click again to delete";
+      setTimeout(() => { del.classList.remove("armed"); del.textContent = "Delete"; }, 3000);
+    });
+    if (!canWrite) del.hidden = true;
+    list.append(el("article", { class: "entry" },
+      el("div", { class: "said", text: i.said }),
+      el("div", { class: "better", text: i.better }),
+      i.why ? el("p", { class: "why", text: i.why }) : null,
+      el("div", { class: "meta" },
+        el("span", { class: "cat", text: CATS[i.category] || i.category }), status,
+        el("span", { class: "spacer" }), del)));
+  }
+}
+
+// drill
+function pickDrill() {
+  const pool = items.filter(i => i.status !== "mastered");
+  if (!pool.length) { drillItem = null; return; }
+  const others = pool.filter(i => i.id !== drillItem?.id);
+  const from = others.length ? others : pool;
+  drillItem = from[Math.floor(Math.random() * from.length)];
+  drillRevealed = false;
+}
+function renderDrill() {
+  const box = $("drill"); box.textContent = "";
+  if (drillItem) drillItem = items.find(i => i.id === drillItem.id) || null;
+  if (!drillItem || drillItem.status === "mastered" && !drillRevealed) pickDrill();
+  if (!drillItem) {
+    box.append(el("div", { class: "label", text: "Drill" }),
+      el("p", { class: "prompt", text: items.length ? "Everything is mastered. Log new mistakes to keep drilling." : "Log a few mistakes first, then come back here to drill them." }));
+    return;
+  }
+  const i = drillItem;
+  box.append(el("div", { class: "label", text: "Say it the natural way · " + (CATS[i.category] || "") }),
+    el("div", { class: "prompt said", text: i.said }),
+    el("label", { class: "f" }, "Your fix (type it or say it out loud)", el("textarea", { id: "drillInput", rows: "2" })),
+    el("div", { class: "reps", text: "Correct in a row: " + (i.reps || 0) + " / 3" }));
+  if (!drillRevealed) {
+    box.append(el("div", { class: "actions" },
+      el("button", { class: "btn primary", text: "Show answer", onclick: () => { drillRevealed = true; renderDrill(); } }),
+      el("button", { class: "btn", text: "Skip", onclick: () => { pickDrill(); renderDrill(); } })));
+  } else {
+    box.append(el("div", { class: "answer" },
+      el("div", { class: "better", text: i.better }),
+      i.why ? el("p", { class: "why", text: i.why }) : null));
+    const got = el("button", { class: "btn primary", text: "I got it", onclick: async () => {
+      const reps = (i.reps || 0) + 1;
+      await save(i.id, { reps, status: reps >= 3 ? "mastered" : "learning" });
+      pickDrill(); renderDrill(); } });
+    const miss = el("button", { class: "btn", text: "I missed it", onclick: async () => {
+      await save(i.id, { reps: 0, status: "learning" });
+      pickDrill(); renderDrill(); } });
+    if (!canWrite) { got.disabled = true; miss.disabled = true; }
+    box.append(el("div", { class: "actions" }, got, miss));
+  }
+}
+
+// storage: mistakes.json in this site's GitHub repo, shared with Claude
+const CFG_KEY = "english-notebook-github";
+let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch {}
+let sha = null, saving = Promise.resolve();
+function guessRepo() {
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  return m ? { owner: m[1], repo: "english-notebook-data" } : {};
+}
+cfg = { ...guessRepo(), ...cfg };
+const api = () => `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/mistakes.json`;
+const headers = () => ({ Accept: "application/vnd.github+json", ...(cfg.token ? { Authorization: "Bearer " + cfg.token } : {}) });
+function b64encode(s) { return btoa(String.fromCharCode(...new TextEncoder().encode(s))); }
+function b64decode(s) { return new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0))); }
+function sortItems() { items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
+
+async function pull() {
+  if (!cfg.owner || !cfg.repo) { notice("Open Settings and enter your GitHub repo to load your notebook."); renderList(); return; }
+  try {
+    const r = await fetch(api() + "?t=" + Date.now(), { headers: headers(), cache: "no-store" });
+    if (r.status === 404) { items = []; sha = null; notice(cfg.token ? "No mistakes.json in that repo yet. Add a mistake to create it." : "Couldn't find the notebook. If the repo is private, add your token in Settings."); render(); return; }
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    sha = j.sha; items = JSON.parse(b64decode(j.content)); sortItems();
+    notice(cfg.token ? "" : "Read-only: add your GitHub token in Settings to save changes.");
+    canWrite = !!cfg.token; render();
+  } catch { notice("Couldn't reach GitHub. Check your connection and the repo name in Settings."); renderList(); }
+}
+function push(message) {
+  saving = saving.then(async () => {
+    if (!cfg.token) { notice("Add your GitHub token in Settings to save changes."); return; }
+    sortItems(); render();
+    const body = { message, content: b64encode(JSON.stringify(items, null, 2) + "\n"), ...(sha ? { sha } : {}) };
+    const r = await fetch(api(), { method: "PUT", headers: { ...headers(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (r.ok) { sha = (await r.json()).content.sha; notice(""); return; }
+    if (r.status === 409 || r.status === 422) { notice("The notebook changed somewhere else (maybe Claude updated it). Reloaded the latest version; redo your last change."); await pull(); return; }
+    notice("Couldn't save to GitHub (error " + r.status + "). Check your token in Settings.");
+  });
+  return saving;
+}
+async function save(id, patch) { const i = items.find(x => x.id === id); if (i) Object.assign(i, patch); await push("Update mistake " + id); }
+async function remove(id) { items = items.filter(x => x.id !== id); await push("Delete mistake " + id); }
+$("addForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!canWrite) { notice("Add your GitHub token in Settings to save changes."); return; }
+  const said = $("fSaid").value.trim(), better = $("fBetter").value.trim();
+  if (!said || !better) return;
+  items.push({ id: "m" + Date.now().toString(36), said, better, why: $("fWhy").value.trim(), category: $("fCat").value,
+    status: "new", reps: 0, createdAt: new Date().toISOString() });
+  $("fSaid").value = ""; $("fBetter").value = ""; $("fWhy").value = "";
+  $("fSaid").focus();
+  await push("Add mistake");
+});
+$("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+  const a = el("a", { href: URL.createObjectURL(blob), download: "english-mistakes-" + new Date().toISOString().slice(0, 10) + ".json" });
+  document.body.append(a); a.click(); a.remove();
+};
+$("refreshBtn").onclick = pull;
+$("settingsBtn").onclick = () => { $("settingsForm").hidden = !$("settingsForm").hidden; };
+$("sOwner").value = cfg.owner || ""; $("sRepo").value = cfg.repo || ""; $("sToken").value = cfg.token || "";
+$("settingsForm").addEventListener("submit", e => {
+  e.preventDefault();
+  cfg = { owner: $("sOwner").value.trim(), repo: $("sRepo").value.trim(), token: $("sToken").value.trim() };
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch {}
+  $("settingsForm").hidden = true; pull();
+});
+
+// tabs and filters
+function showTab(which) {
+  $("tabLog").setAttribute("aria-selected", String(which === "log"));
+  $("tabDrill").setAttribute("aria-selected", String(which === "drill"));
+  $("viewLog").hidden = which !== "log";
+  $("viewDrill").hidden = which !== "drill";
+  if (which === "drill") { pickDrill(); renderDrill(); }
+}
+$("tabLog").onclick = () => showTab("log");
+$("tabDrill").onclick = () => showTab("drill");
+$("statusFilter").onchange = e => { filter.status = e.target.value; renderList(); };
+$("search").oninput = e => { filter.q = e.target.value; renderList(); };
+
+renderCatChips();
+renderStats();
+
+canWrite = false;
+pull();
+</script>
+</body>
+</html>

@@ -77,7 +77,8 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 /* entries */
 .list{display:flex;flex-direction:column;gap:10px}
 .entry{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:8px;min-width:0}
-.said{font-family:var(--display);font-size:18px;color:var(--strike);overflow-wrap:anywhere}
+.said{font-family:var(--display);font-size:18px;color:var(--strike);overflow-wrap:anywhere;text-decoration:line-through;text-decoration-thickness:1.5px;cursor:pointer;transition:text-decoration-color .15s}
+.said:hover,.said.clear{text-decoration-color:transparent}
 .better{font-family:var(--display);font-size:19px;color:var(--fix);overflow-wrap:anywhere}
 .better::before{content:"→ ";color:var(--muted)}
 .why{color:var(--muted);font-size:14px;margin:0;overflow-wrap:anywhere}
@@ -409,6 +410,8 @@ $("tabDrill").onclick = () => showTab("drill");
 $("statusFilter").onchange = e => { filter.status = e.target.value; renderList(); };
 $("search").oninput = e => { filter.q = e.target.value; renderList(); };
 
+// tap a struck-through sentence to clear the line (phones have no hover)
+document.addEventListener("click", e => { const t = e.target.closest(".said"); if (t) t.classList.toggle("clear"); });
 renderCatChips();
 renderStats();
 

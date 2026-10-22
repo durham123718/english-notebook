@@ -332,7 +332,11 @@ function guessRepo() {
 cfg = { ...guessRepo(), ...cfg };
 const api = () => `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/mistakes.json`;
 const headers = () => ({ Accept: "application/vnd.github+json", ...(cfg.token ? { Authorization: "Bearer " + cfg.token } : {}) });
-function b64encode(s) { return btoa(String.fromCharCode(...new TextEncoder().encode(s))); }
+function b64encode(s) {
+  const bytes = new TextEncoder().encode(s); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
 function b64decode(s) { return new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0))); }
 function sortItems() { items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
 
@@ -343,7 +347,11 @@ async function pull() {
     if (r.status === 404) { items = []; sha = null; notice(cfg.token ? "No mistakes.json in that repo yet. Add a mistake to create it." : "Couldn't find the notebook. If the repo is private, add your token in Settings."); render(); return; }
     if (!r.ok) throw new Error(r.status);
     const j = await r.json();
-    sha = j.sha; items = JSON.parse(b64decode(j.content)); sortItems();
+    sha = j.sha;
+    // GitHub only inlines files up to 1 MB; larger ones (up to 100 MB) come from the raw endpoint
+    const text = j.content ? b64decode(j.content)
+      : await (await fetch(api() + "?t=" + Date.now(), { headers: { ...headers(), Accept: "application/vnd.github.raw+json" }, cache: "no-store" })).text();
+    items = JSON.parse(text); sortItems();
     notice(cfg.token ? "" : "Read-only: add your GitHub token in Settings to save changes.");
     canWrite = !!cfg.token; render();
   } catch { notice("Couldn't reach GitHub. Check your connection and the repo name in Settings."); renderList(); }

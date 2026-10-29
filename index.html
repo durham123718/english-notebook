@@ -82,6 +82,10 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .better{font-family:var(--display);font-size:19px;color:var(--fix);overflow-wrap:anywhere}
 .better::before{content:"→ ";color:var(--muted)}
 .why{color:var(--muted);font-size:14px;margin:0;overflow-wrap:anywhere}
+.alt{margin:0;font-size:14px;overflow-wrap:anywhere}
+.alt b,.colls b{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.colls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.coll{font:13px var(--mono);background:var(--chip);border-radius:5px;padding:2px 7px}
 .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px}
 .cat{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;background:var(--chip);padding:3px 8px;border-radius:4px;color:var(--muted)}
 .status{appearance:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font:500 12px var(--body);cursor:pointer;background:var(--surface);color:var(--ink)}
@@ -249,7 +253,20 @@ function visible() {
   return items.filter(i =>
     (filter.cat === "all" || i.category === filter.cat) &&
     (filter.status === "all" || i.status === filter.status) &&
-    (!q || [i.said, i.better, i.why].some(s => (s || "").toLowerCase().includes(q))));
+    (!q || [i.said, i.better, i.why, (i.alt || []).join(" "), (i.collocations || []).join(" ")].some(s => (s || "").toLowerCase().includes(q))));
+}
+
+// optional fields: alt (other natural ways to say it) and collocations (useful word pairings)
+function extras(i) {
+  const out = [];
+  if (Array.isArray(i.alt) && i.alt.length)
+    out.push(el("p", { class: "alt" }, el("b", { text: "Also say:" }), document.createTextNode(" " + i.alt.join("  ·  "))));
+  if (Array.isArray(i.collocations) && i.collocations.length) {
+    const row = el("div", { class: "colls" }, el("b", { text: "Collocations:" }));
+    i.collocations.forEach(c => row.append(el("span", { class: "coll", text: c })));
+    out.push(row);
+  }
+  return out;
 }
 
 function renderList() {
@@ -273,6 +290,7 @@ function renderList() {
       el("div", { class: "said", text: i.said }),
       el("div", { class: "better", text: i.better }),
       i.why ? el("p", { class: "why", text: i.why }) : null,
+      ...extras(i),
       el("div", { class: "meta" },
         el("span", { class: "cat", text: CATS[i.category] || i.category }), status,
         el("span", { class: "spacer" }), del)));
@@ -309,7 +327,8 @@ function renderDrill() {
   } else {
     box.append(el("div", { class: "answer" },
       el("div", { class: "better", text: i.better }),
-      i.why ? el("p", { class: "why", text: i.why }) : null));
+      i.why ? el("p", { class: "why", text: i.why }) : null,
+      ...extras(i)));
     const got = el("button", { class: "btn primary", text: "I got it", onclick: async () => {
       const reps = (i.reps || 0) + 1;
       await save(i.id, { reps, status: reps >= 3 ? "mastered" : "learning" });

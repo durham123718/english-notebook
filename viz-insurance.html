@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보험자산배분 시각화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8; --grid:#E8ECF1;
+  --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#6B7385; --s1-soft:rgba(42,120,214,.16);
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+    --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+  --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:22px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:64ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.formula{font-family:var(--mono);font-size:15px;background:var(--chip);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere}
+.formula b{color:var(--s1)}
+.stackrow{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:center;font-size:13px}
+.stackrow .name{color:var(--muted)}
+.stack{display:flex;gap:2px;height:30px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg{display:flex;align-items:center;justify-content:center;font:500 12px var(--mono);white-space:nowrap;overflow:hidden;color:var(--ink);transition:flex-basis .25s}
+.seg.floor{background:var(--chip)}
+.seg.cush{background:var(--s1-soft)}
+.seg.stock{background:var(--s1);color:#fff}
+.seg.bond{background:var(--chip)}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ctl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.ctl output{font:500 14px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13.5px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.warn{background:var(--accent-soft);border-left:3px solid var(--bad);padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.lesson{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14.5px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.stat b{display:block;font:500 22px var(--mono);font-variant-numeric:tabular-nums}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.chart .dl{font-size:12px;font-weight:600;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:150px;z-index:2}
+.tip .row{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip b{font:500 12.5px var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:500;background:var(--chip)}
+th:first-child,td:first-child{text-align:left}
+td.buy{color:var(--good)} td.sell{color:var(--bad)}
+details summary{cursor:pointer;font-weight:600}
+.cmp th,.cmp td{text-align:left;white-space:normal}
+.ox li{margin:4px 0}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">투자자산운용사 · 분산투자기법</div>
+    <h1>보험자산배분 시각화</h1>
+    <p class="lede">CPPI(보험자산배분)가 시장마다 어떻게 움직이는지 직접 조작해 보세요. 정률법(50:50, 전술적 자산배분의 역투자)과 주식 100% 보유를 함께 비교합니다. <a href="invest.html">← 노트로</a></p>
+  </header>
+
+  <section class="card" aria-labelledby="h-formula">
+    <h2 id="h-formula">1. 핵심 공식: 위험자산 = 승수 × 쿠션</h2>
+    <div class="formula" id="formula"></div>
+    <div class="stackrow"><span class="name">포트폴리오</span><div class="stack"><div class="seg floor" id="segFloor"></div><div class="seg cush" id="segCush"></div></div></div>
+    <div class="stackrow"><span class="name">실제 투자</span><div class="stack"><div class="seg stock" id="segStock"></div><div class="seg bond" id="segBond"></div></div></div>
+    <p class="sub" id="barCap" style="font-family:var(--mono)"></p>
+    <p class="sub">floor의 현재가치만큼은 언제든 무위험자산으로 지킬 수 있는 몫이고, 그 위의 여유분(쿠션)을 m배 해서 주식에 넣습니다.</p>
+    <div class="warn" id="warnFloor" hidden></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-ctl">
+    <h2 id="h-ctl">2. 조건 바꾸기</h2>
+    <div>
+      <div class="label" style="margin-bottom:6px">시장 시나리오</div>
+      <div class="chips" id="scen"></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">승수 m <output id="oM"></output><input type="range" id="m" min="1" max="6" step="0.5" value="3"></label>
+      <label class="ctl">만기 최저보장 (원금 대비) <output id="oF"></output><input type="range" id="fl" min="80" max="110" step="1" value="90"></label>
+      <label class="ctl">무위험수익률 (연) <output id="oR"></output><input type="range" id="rf" min="0" max="6" step="0.5" value="3"></label>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-path">
+    <h2 id="h-path">3. 포트폴리오 가치 경로</h2>
+    <div class="lesson" id="lesson"></div>
+    <div class="stats" id="stats"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--s1)"></i>CPPI (보험자산배분)</span>
+      <span><i style="border-color:var(--s3)"></i>정률법 50:50 (역투자)</span>
+      <span><i style="border-color:var(--s2)"></i>주식 100%</span>
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>floor (최저보장 현재가치)</span>
+    </div>
+    <div class="chart" id="chartPath"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-w">
+    <h2 id="h-w">4. CPPI의 주식 비중: 오르면 사고, 내리면 판다</h2>
+    <p class="sub">점선은 정률법의 고정 비중 50%입니다. CPPI는 가격을 따라가고(추세추종), 정률법은 늘 같은 비율로 되돌립니다(역투자).</p>
+    <div class="chart" id="chartW"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-pay">
+    <h2 id="h-pay">5. 수익구조: CPPI는 볼록, 정률법은 오목</h2>
+    <p class="sub">무작위 시장 경로 300개를 돌려, 주식 수익률(가로)에 따른 전략 수익률(세로)을 찍었습니다. 회색 대각선은 주식 100%입니다. CPPI는 아래쪽이 floor에서 막히고 위로 휘고(볼록), 정률법은 양 끝에서 주식에 못 미칩니다(오목). 현재 승수·floor·금리가 그대로 적용됩니다.</p>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--s1)"></span>CPPI</span>
+      <span><span class="sw" style="background:var(--s3)"></span>정률법 50:50</span>
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>주식 100%</span>
+    </div>
+    <div class="chart" id="chartPay"></div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>CPPI 매매 기록 표 (단계별)</summary>
+      <div class="tbl" style="margin-top:10px"><table id="log"></table></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="h-sum">
+    <h2 id="h-sum">6. 시험용 정리</h2>
+    <div class="tbl"><table class="cmp">
+      <thead><tr><th>구분</th><th>전술적 (정률법·포뮬러 플랜)</th><th>보험자산배분 (CPPI)</th></tr></thead>
+      <tbody>
+        <tr><td>가격 상승 시</td><td>위험자산 매도</td><td>위험자산 매수</td></tr>
+        <tr><td>성격</td><td>역투자</td><td>추세추종</td></tr>
+        <tr><td>위험허용도</td><td>불변</td><td>부가 늘면 증가</td></tr>
+        <tr><td>수익구조</td><td>오목 (concave)</td><td>볼록 (convex)</td></tr>
+        <tr><td>유리한 시장</td><td>등락 반복 (횡보)</td><td>한 방향 추세</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="ox">
+      <li>최저보장수익률은 무위험수익률 <b>이하</b>여야 한다 (보장 = 무위험자산만으로 달성 가능해야 함)</li>
+      <li>승수가 클수록 상승 참여가 크지만, 한 번에 <b>1/m 이상</b> 폭락하면 floor가 깨진다 (갭 리스크)</li>
+      <li>쿠션이 0이 되면 전액 무위험자산 → floor 확보, 이후 상승에는 참여하지 못함</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const T = 20; // rebalancing steps over 1 year
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+
+// ---------- scenarios ----------
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gbm(rand, mu = 0.08, sigma = 0.3) {
+  const dt = 1 / T, out = [];
+  for (let i = 0; i < T; i++) {
+    const z = Math.sqrt(-2 * Math.log(1 - rand())) * Math.cos(2 * Math.PI * rand());
+    out.push(Math.exp((mu - sigma * sigma / 2) * dt + sigma * Math.sqrt(dt) * z) - 1);
+  }
+  return out;
+}
+let seed = 11;
+const SCEN = {
+  up:    { name: "상승 추세", rets: () => Array.from({ length: T }, (_, i) => i % 2 ? 0.015 : 0.045) },
+  down:  { name: "하락 추세", rets: () => Array.from({ length: T }, (_, i) => i % 2 ? -0.015 : -0.045) },
+  side:  { name: "횡보 (등락 반복)", rets: () => Array.from({ length: T }, (_, i) => i % 2 ? -0.08 : 0.09) },
+  crash: { name: "폭락 (갭)", rets: () => Array.from({ length: T }, (_, i) => i === 8 ? -0.4 : 0.01) },
+  rand:  { name: "랜덤", rets: () => gbm(rng(seed)) }
+};
+let scen = "up";
+
+// ---------- simulation ----------
+function simulate(rets, m, floorPct, rf) {
+  const g = Math.pow(1 + rf, 1 / T), FT = floorPct;
+  const floorAt = t => FT / Math.pow(g, T - t);
+  let V = 100, CM = 100, BH = 100, stockAfter = 0, breach = -1;
+  const cppi = [V], cm = [CM], bh = [BH], floor = [floorAt(0)], w = [], log = [];
+  for (let t = 0; t < T; t++) {
+    const F = floorAt(t), cushion = Math.max(V - F, 0);
+    const E = Math.min(m * cushion, V), B = V - E;
+    log.push({ t, V, F, cushion, E, trade: E - stockAfter, r: rets[t] });
+    w.push(E / V);
+    stockAfter = E * (1 + rets[t]);
+    V = stockAfter + B * g;
+    CM *= 0.5 * (1 + rets[t]) + 0.5 * g;
+    BH *= 1 + rets[t];
+    cppi.push(V); cm.push(CM); bh.push(BH); floor.push(floorAt(t + 1));
+    if (breach < 0 && V < floorAt(t + 1) - 1e-9) breach = t + 1;
+  }
+  return { cppi, cm, bh, floor, w, log, breach, cushion0: 100 - floorAt(0) };
+}
+
+// ---------- tiny SVG helpers ----------
+const NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs = {}, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.append(n); return n; }
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => span / k <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+function frame(box, height, xDomain, yDomain, { xTicks, yFmt, xFmt, xTitle }) {
+  box.replaceChildren();
+  const W = Math.max(box.clientWidth, 280), H = height, M = { l: 40, r: box.clientWidth < 500 ? 70 : 92, t: 10, b: 34 };
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }); box.append(svg);
+  const x = v => M.l + (v - xDomain[0]) / (xDomain[1] - xDomain[0]) * (W - M.l - M.r);
+  const y = v => H - M.b - (v - yDomain[0]) / (yDomain[1] - yDomain[0]) * (H - M.t - M.b);
+  for (const v of niceTicks(yDomain[0], yDomain[1])) {
+    s("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), style: "stroke:var(--grid)" }, svg);
+    s("text", { x: M.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = yFmt(v);
+  }
+  for (const v of xTicks) s("text", { x: x(v), y: H - M.b + 16, "text-anchor": "middle" }, svg).textContent = xFmt(v);
+  if (xTitle) s("text", { x: (M.l + W - M.r) / 2, y: H - 2, "text-anchor": "middle" }, svg).textContent = xTitle;
+  return { svg, x, y, W, H, M };
+}
+const pathD = (xs, ys) => xs.map((xv, i) => (i ? "L" : "M") + xv.toFixed(1) + "," + ys[i].toFixed(1)).join("");
+function placeTip(box, tip, px, py) {
+  const bw = box.clientWidth, tw = tip.offsetWidth;
+  tip.style.left = Math.min(Math.max(px + 12, 0), bw - tw) + "px";
+  tip.style.top = Math.max(py - tip.offsetHeight - 8, 0) + "px";
+}
+function tipRows(rows) {
+  return rows.map(r => `<div class="row"><span><span class="sw" style="background:${r.c}"></span>${r.k}</span><b>${r.v}</b></div>`).join("");
+}
+
+// ---------- charts ----------
+function drawPath(res) {
+  const box = $("chartPath"), all = [...res.cppi, ...res.cm, ...res.bh, ...res.floor];
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.08 || 5; lo -= pad; hi += pad;
+  const f = frame(box, 300, [0, T], [lo, hi], { xTicks: [0, 5, 10, 15, 20], xFmt: v => v, yFmt: v => fmt(v, 0), xTitle: "리밸런싱 횟수 (1년, 20회)" });
+  const ts = res.cppi.map((_, i) => i), xs = ts.map(f.x);
+  s("path", { d: pathD(xs, res.floor.map(f.y)), fill: "none", style: "stroke:var(--ref)", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, f.svg);
+  const series = [
+    { k: "주식 100%", v: res.bh, c: "var(--s2)" },
+    { k: "정률법", v: res.cm, c: "var(--s3)" },
+    { k: "CPPI", v: res.cppi, c: "var(--s1)" }
+  ];
+  for (const sr of series) s("path", { d: pathD(xs, sr.v.map(f.y)), fill: "none", style: `stroke:${sr.c}`, "stroke-width": 2, "stroke-linejoin": "round" }, f.svg);
+  // direct labels at line ends, nudged apart
+  const ends = [...series.map(sr => ({ k: sr.k, y: f.y(sr.v[T]), c: sr.c })), { k: "floor", y: f.y(res.floor[T]), c: "var(--ref)" }].sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const e of ends) {
+    s("rect", { x: f.x(T) + 6, y: e.y - 4, width: 8, height: 8, rx: 2, style: `fill:${e.c}` }, f.svg);
+    s("text", { x: f.x(T) + 18, y: e.y + 4, class: "dl" }, f.svg).textContent = e.k;
+  }
+  if (res.breach >= 0) {
+    const cx = f.x(res.breach), cy = f.y(res.cppi[res.breach]);
+    s("circle", { cx, cy, r: 6, fill: "none", style: "stroke:var(--bad)", "stroke-width": 2 }, f.svg);
+  }
+  hoverLine(box, f, xs, i => [
+    { k: "CPPI", v: fmt(res.cppi[i]), c: "var(--s1)" },
+    { k: "정률법", v: fmt(res.cm[i]), c: "var(--s3)" },
+    { k: "주식 100%", v: fmt(res.bh[i]), c: "var(--s2)" },
+    { k: "floor", v: fmt(res.floor[i]), c: "var(--ref)" }
+  ], i => series.map(sr => ({ y: f.y(sr.v[i]), c: sr.c })), i => `${i}회차` + (i ? ` · 주가 ${res.log[i - 1].r >= 0 ? "+" : ""}${fmt(res.log[i - 1].r * 100)}%` : " · 시작"));
+}
+function drawWeight(res) {
+  const box = $("chartW");
+  const f = frame(box, 210, [0, T], [0, 100], { xTicks: [0, 5, 10, 15, 20], xFmt: v => v, yFmt: v => v + "%", xTitle: "리밸런싱 횟수" });
+  const ts = [], ws = [];
+  res.w.forEach((w, i) => { ts.push(i, i + 1); ws.push(w * 100, w * 100); });
+  const xs = ts.map(f.x), ys = ws.map(f.y);
+  s("path", { d: pathD(xs, ys) + `L${xs.at(-1)},${f.y(0)}L${xs[0]},${f.y(0)}Z`, style: "fill:var(--s1-soft)" }, f.svg);
+  s("path", { d: pathD(xs, ys), fill: "none", style: "stroke:var(--s1)", "stroke-width": 2 }, f.svg);
+  s("line", { x1: f.x(0), x2: f.x(T), y1: f.y(50), y2: f.y(50), style: "stroke:var(--ref)", "stroke-dasharray": "5 4", "stroke-width": 1.5 }, f.svg);
+  s("text", { x: f.x(T) + 6, y: f.y(50) + 4, class: "dl" }, f.svg).textContent = "정률법 50%";
+  s("text", { x: f.x(T) + 6, y: f.y(res.w.at(-1) * 100) + (Math.abs(res.w.at(-1) * 100 - 50) < 8 ? 18 : 4), class: "dl" }, f.svg).textContent = "CPPI";
+  const cx = res.w.map((_, i) => f.x(i + 0.5));
+  hoverLine(box, f, cx, i => {
+    const l = res.log[i];
+    return [
+      { k: "주식 비중", v: fmt(res.w[i] * 100) + "%", c: "var(--s1)" },
+      { k: "매매", v: (l.trade >= 0 ? "매수 " : "매도 ") + fmt(Math.abs(l.trade)), c: "transparent" }
+    ];
+  }, i => [{ y: f.y(res.w[i] * 100), c: "var(--s1)" }], i => `${i + 1}번째 구간 (${i}회차 리밸런싱 후)`);
+}
+function hoverLine(box, f, xs, rows, dots, title) {
+  const g = s("g", { style: "pointer-events:none", visibility: "hidden" }, f.svg);
+  const vl = s("line", { y1: f.M.t, y2: f.H - f.M.b, style: "stroke:var(--muted)", "stroke-width": 1 }, g);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  const hit = s("rect", { x: f.M.l, y: f.M.t, width: f.W - f.M.l - f.M.r, height: f.H - f.M.t - f.M.b, fill: "transparent" }, f.svg);
+  const move = ev => {
+    const r = f.svg.getBoundingClientRect(), px = (ev.clientX - r.left) * f.W / r.width;
+    let i = 0, best = 1e9; xs.forEach((xv, k) => { const d = Math.abs(xv - px); if (d < best) { best = d; i = k; } });
+    vl.setAttribute("x1", xs[i]); vl.setAttribute("x2", xs[i]);
+    g.querySelectorAll("circle").forEach(c => c.remove());
+    for (const d of dots(i)) s("circle", { cx: xs[i], cy: d.y, r: 4.5, style: `fill:${d.c};stroke:var(--surface)`, "stroke-width": 2 }, g);
+    g.setAttribute("visibility", "visible");
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${title(i)}</div>` + tipRows(rows(i)); tip.hidden = false;
+    placeTip(box, tip, xs[i] * r.width / f.W, (ev.clientY - r.top));
+  };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { g.setAttribute("visibility", "hidden"); tip.hidden = true; });
+}
+let payPaths = null;
+function drawPayoff(m, fl, rf) {
+  if (!payPaths) { const rand = rng(2026); payPaths = Array.from({ length: 300 }, () => gbm(rand, 0.06, 0.3)); }
+  const pts = payPaths.map(r => { const o = simulate(r, m, fl, rf); return { x: o.bh[T] - 100, a: o.cppi[T] - 100, b: o.cm[T] - 100 }; });
+  const xs = pts.map(p => p.x), ys = pts.flatMap(p => [p.a, p.b]);
+  const xlo = Math.min(...xs) - 3, xhi = Math.max(...xs) + 3;
+  const ylo = Math.min(...ys, xlo) - 3, yhi = Math.max(...ys, xhi) + 3;
+  const box = $("chartPay");
+  const f = frame(box, 320, [xlo, xhi], [ylo, yhi], { xTicks: niceTicks(xlo, xhi), xFmt: v => v + "%", yFmt: v => v + "%", xTitle: "주식 1년 수익률" });
+  s("line", { x1: f.x(Math.max(xlo, ylo)), y1: f.y(Math.max(xlo, ylo)), x2: f.x(Math.min(xhi, yhi)), y2: f.y(Math.min(xhi, yhi)), style: "stroke:var(--ref)", "stroke-dasharray": "5 4", "stroke-width": 1.5 }, f.svg);
+  s("line", { x1: f.M.l, x2: f.W - f.M.r, y1: f.y(fl - 100), y2: f.y(fl - 100), style: "stroke:var(--bad)", "stroke-dasharray": "2 4", "stroke-width": 1.5 }, f.svg);
+  s("text", { x: f.W - f.M.r + 6, y: f.y(fl - 100) + 4, class: "dl" }, f.svg).textContent = "최저보장";
+  const dots = [];
+  for (const p of pts) {
+    dots.push({ cx: f.x(p.x), cy: f.y(p.b), p, k: "정률법", v: p.b, c: "var(--s3)" });
+    dots.push({ cx: f.x(p.x), cy: f.y(p.a), p, k: "CPPI", v: p.a, c: "var(--s1)" });
+  }
+  for (const d of dots) s("circle", { cx: d.cx, cy: d.cy, r: 3, style: `fill:${d.c};stroke:var(--surface)`, "stroke-width": 1, opacity: 0.85 }, f.svg);
+  const ring = s("circle", { r: 6, fill: "none", style: "stroke:var(--ink)", "stroke-width": 1.5, visibility: "hidden" }, f.svg);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  const hit = s("rect", { x: 0, y: 0, width: f.W, height: f.H, fill: "transparent" }, f.svg);
+  const move = ev => {
+    const r = f.svg.getBoundingClientRect(), px = (ev.clientX - r.left) * f.W / r.width, py = (ev.clientY - r.top) * f.H / r.height;
+    let best = null, bd = 18 * 18;
+    for (const d of dots) { const dd = (d.cx - px) ** 2 + (d.cy - py) ** 2; if (dd < bd) { bd = dd; best = d; } }
+    if (!best) { ring.setAttribute("visibility", "hidden"); tip.hidden = true; return; }
+    ring.setAttribute("cx", best.cx); ring.setAttribute("cy", best.cy); ring.setAttribute("visibility", "visible");
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">시장 경로 1개</div>` + tipRows([
+      { k: "주식", v: fmt(best.p.x) + "%", c: "var(--s2)" }, { k: "CPPI", v: fmt(best.p.a) + "%", c: "var(--s1)" }, { k: "정률법", v: fmt(best.p.b) + "%", c: "var(--s3)" }]);
+    tip.hidden = false; placeTip(box, tip, best.cx * r.width / f.W, best.cy * r.height / f.H);
+  };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { ring.setAttribute("visibility", "hidden"); tip.hidden = true; });
+}
+
+// ---------- page ----------
+function lessonText(res, m) {
+  const fin = { CPPI: res.cppi[T], 정률법: res.cm[T], "주식 100%": res.bh[T] };
+  const rank = Object.entries(fin).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${fmt(v)}`).join(" > ");
+  const base = {
+    up: "<b>상승 추세:</b> 오를수록 쿠션이 커져 주식을 더 삽니다. 추세가 이어지면 CPPI가 정률법보다 유리합니다.",
+    down: "<b>하락 추세:</b> 내릴수록 주식을 팔아 floor 위에서 버팁니다. 정률법은 계속 주식을 사들여 손실이 더 커집니다.",
+    side: "<b>횡보:</b> CPPI는 오른 뒤 사고 내린 뒤 팔아(고가 매수·저가 매도) 손해를 봅니다. 등락 반복 시장은 역투자인 정률법에 유리합니다.",
+    crash: `<b>폭락(갭):</b> 리밸런싱 전에 한 번에 40% 떨어집니다. 승수가 1/0.4 = 2.5보다 크면 손실이 쿠션보다 커져 floor가 깨집니다 (지금 m = ${m}).`,
+    rand: "<b>랜덤:</b> 연 변동성 30%의 무작위 경로입니다. ‘다시 뽑기’로 여러 시장을 비교해 보세요."
+  }[scen];
+  const br = res.breach >= 0 ? ` <span style="color:var(--bad);font-weight:600">⚠ ${res.breach}회차에 CPPI가 floor 아래로 떨어졌습니다 (빨간 원).</span>` : "";
+  return `${base}${br}<br><span class="sub">이번 경로 최종 가치: ${rank}</span>`;
+}
+function render() {
+  const m = +$("m").value, fl = +$("fl").value, rf = +$("rf").value / 100;
+  $("oM").textContent = m; $("oF").textContent = fl + "% (최저보장수익률 " + (fl - 100) + "%)"; $("oR").textContent = fmt(rf * 100) + "%";
+  const res = simulate(SCEN[scen].rets(), m, fl, rf);
+  // formula bars at t = 0
+  const F0 = res.floor[0], c0 = Math.max(100 - F0, 0), E0 = Math.min(m * c0, 100);
+  $("formula").innerHTML = `주식 = m × (포트폴리오 − floor 현재가치) = ${m} × (100 − ${fmt(F0)}) = <b>${fmt(E0)}</b>` + (m * c0 > 100 ? " (100 상한)" : "");
+  const seg = (id, v, label) => { const e = $(id); e.style.flex = `0 0 calc(${Math.max(v, 0)}% - 1px)`; e.textContent = v >= 22 ? label : ""; e.title = label; };
+  seg("segFloor", Math.min(F0, 100), "floor PV " + fmt(F0)); seg("segCush", c0, "쿠션 " + fmt(c0));
+  seg("segStock", E0, "주식 " + fmt(E0)); seg("segBond", 100 - E0, "채권 " + fmt(100 - E0));
+  $("barCap").textContent = `floor PV ${fmt(F0)} + 쿠션 ${fmt(c0)}  →  주식 ${fmt(E0)} + 채권 ${fmt(100 - E0)}`;
+  const w = $("warnFloor");
+  if (fl / 100 - 1 > rf + 1e-9) { w.hidden = false; w.innerHTML = `<b>보장 불가:</b> 최저보장수익률 ${fl - 100}%가 무위험수익률 ${fmt(rf * 100)}%보다 높습니다. 전액 무위험자산에 넣어도 만기에 ${fmt(100 * (1 + rf))}밖에 안 되므로 ${fl}을 보장할 수 없어요. 쿠션이 0이라 주식 투자도 0입니다.`; }
+  else if (c0 < 0.05) { w.hidden = false; w.innerHTML = "<b>쿠션 0:</b> 최저보장수익률이 무위험수익률과 같아 전액 무위험자산에 들어갑니다. 보장은 되지만 상승에 참여하지 못합니다."; }
+  else w.hidden = true;
+  $("lesson").innerHTML = lessonText(res, m);
+  const stat = (k, v, c, note) => `<div class="stat"><div class="k">${c ? `<span class="sw" style="background:${c}"></span>` : ""}${k}</div><b>${v}</b>${note ? `<div class="sub">${note}</div>` : ""}</div>`;
+  $("stats").innerHTML = stat("CPPI 최종", fmt(res.cppi[T]), "var(--s1)") + stat("정률법 최종", fmt(res.cm[T]), "var(--s3)") +
+    stat("주식 100% 최종", fmt(res.bh[T]), "var(--s2)") + stat("floor 유지", res.breach >= 0 ? "깨짐" : "유지", null, "만기 floor " + fmt(res.floor[T]));
+  drawPath(res); drawWeight(res); drawPayoff(m, fl, rf);
+  $("log").innerHTML = "<thead><tr><th>회차</th><th>포트폴리오</th><th>floor</th><th>쿠션</th><th>목표 주식</th><th>매매</th><th>다음 주가</th></tr></thead><tbody>" +
+    res.log.map(l => `<tr><td>${l.t}</td><td>${fmt(l.V)}</td><td>${fmt(l.F)}</td><td>${fmt(l.cushion)}</td><td>${fmt(l.E)}</td><td class="${l.trade >= 0.05 ? "buy" : l.trade <= -0.05 ? "sell" : ""}">${Math.abs(l.trade) < 0.05 ? "—" : (l.trade > 0 ? "매수 " : "매도 ") + fmt(Math.abs(l.trade))}</td><td>${l.r >= 0 ? "+" : ""}${fmt(l.r * 100)}%</td></tr>`).join("") + "</tbody>";
+}
+function chips() {
+  const box = $("scen"); box.replaceChildren();
+  for (const [k, v] of Object.entries(SCEN)) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = v.name; b.setAttribute("aria-pressed", String(k === scen));
+    b.onclick = () => { scen = k; chips(); render(); }; box.append(b);
+  }
+  if (scen === "rand") {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = "↻ 다시 뽑기";
+    b.onclick = () => { seed++; render(); }; box.append(b);
+  }
+}
+["m", "fl", "rf"].forEach(id => $(id).addEventListener("input", render));
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(render, 80); }).observe(document.querySelector(".wrap"));
+chips(); render();
+</script>
+</body>
+</html>

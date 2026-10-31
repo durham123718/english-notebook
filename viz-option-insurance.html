@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>옵션 포트폴리오 보험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8; --grid:#E8ECF1;
+  --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#6B7385; --s1-soft:rgba(42,120,214,.16); --s3-soft:rgba(27,175,122,.18);
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+    --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+  --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:22px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+h3{font-size:15.5px;font-weight:600;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:64ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--chip);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ctl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.ctl output{font:500 14px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:500 14.5px var(--body);color:var(--muted);cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13.5px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.lesson{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14.5px}
+.warn{background:var(--accent-soft);border-left:3px solid var(--bad);padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat b{display:block;font:500 21px var(--mono);font-variant-numeric:tabular-nums}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pc ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.pc .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+.stack{display:flex;gap:2px;height:30px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg{display:flex;align-items:center;justify-content:center;font:500 12px var(--mono);white-space:nowrap;overflow:hidden;transition:flex-basis .25s}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.chart .dl{font-size:12px;font-weight:600;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:160px;z-index:2}
+.tip .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip b{font:500 12.5px var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:13.5px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;background:var(--chip)}
+.ox li{margin:4px 0}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pc{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">투자자산운용사 · 보험자산배분전략 ②</div>
+    <h1>옵션모형을 이용한 포트폴리오 보험</h1>
+    <p class="lede">주식 하락 위험을 옵션(또는 옵션을 흉내 낸 매매)으로 막는 4가지 전략을 차트로 비교합니다. 모든 옵션 가격은 블랙-숄즈로 계산하고, 주가는 100에서 시작해 만기는 1년입니다. <a href="invest.html">← 노트로</a> · <a href="viz-insurance.html">CPPI 시각화 →</a></p>
+  </header>
+
+  <section class="card">
+    <h2>공통 조건</h2>
+    <div class="controls">
+      <label class="ctl">행사가격 K (= 지키고 싶은 하한) <output id="oK"></output><input type="range" id="K" min="80" max="110" step="1" value="95"></label>
+      <label class="ctl">변동성 σ (연) <output id="oS"></output><input type="range" id="sig" min="10" max="40" step="1" value="20"></label>
+      <label class="ctl">무위험수익률 (연) <output id="oR"></output><input type="range" id="rf" min="0" max="6" step="0.5" value="3"></label>
+    </div>
+    <p class="sub">변동성이 클수록 옵션이 비싸져 보험료가 오릅니다. 슬라이더를 움직이면 모든 탭이 함께 바뀝니다.</p>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-t="pp">① 방어적 풋</button>
+    <button class="tab" role="tab" data-t="ie">② 이자추출</button>
+    <button class="tab" role="tab" data-t="sp">③ 합성 풋</button>
+    <button class="tab" role="tab" data-t="fu">④ 선물 동적헤징</button>
+    <button class="tab" role="tab" data-t="sum">정리</button>
+  </nav>
+
+  <!-- ① protective put -->
+  <section class="card" data-v="pp">
+    <h2>① 방어적 풋 (Protective Put)</h2>
+    <div class="formula">주식 매수 + 풋옵션 매수 (행사가 K)</div>
+    <div class="stats" id="ppStats"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>방어적 풋 (합계)</span>
+      <span><i style="border-color:var(--s2)"></i>주식만</span>
+      <span><i style="border-color:var(--s3)"></i>풋 매수만</span>
+    </div>
+    <div class="chart" id="ppChart"></div>
+    <p class="sub">가로축은 만기 주가, 세로축은 손익입니다. 파란 선이 아래에서 평평해지는 지점이 보험 효과(최대손실)이고, 위로는 주식과 평행하게 오르되 풋 프리미엄만큼 아래에 있습니다.</p>
+    <div class="pc">
+      <div class="box"><h3>장점</h3><ul><li>구조가 단순하고, 한 번 사면 만기까지 매매가 필요 없음 (정적 전략)</li><li>하락 위험이 확실하게 제한됨</li></ul></div>
+      <div class="box"><h3>한계</h3><ul><li>원하는 만기·행사가격의 풋을 시장에서 구하기 어려움 (상장옵션은 만기가 짧음)</li><li>프리미엄(보험료) 비용 → 상승 시 수익이 그만큼 줄어듦</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ② interest extraction -->
+  <section class="card" data-v="ie" hidden>
+    <h2>② 이자추출전략</h2>
+    <div class="formula">원금 100 = 채권 (만기에 보장액이 되는 만큼) + 콜옵션 매수 (남는 돈, 즉 이자 부분)</div>
+    <label class="ctl" style="max-width:380px">만기 원금보장 비율 <output id="oF"></output><input type="range" id="F" min="85" max="104" step="1" value="100"></label>
+    <div>
+      <div class="label" style="margin-bottom:6px">원금 100의 배분</div>
+      <div class="stack"><div class="seg" id="ieBond" style="background:var(--chip)"></div><div class="seg" id="ieCall" style="background:var(--s1);color:#fff"></div></div>
+    </div>
+    <div class="warn" id="ieWarn" hidden></div>
+    <div class="stats" id="ieStats"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>이자추출 포트폴리오</span>
+      <span><i style="border-color:var(--s2)"></i>주식 100%</span>
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>보장액</span>
+    </div>
+    <div class="chart" id="ieChart"></div>
+    <div class="lesson"><b>핵심:</b> 풋-콜 패리티(<span style="font-family:var(--mono)">주식 + 풋 = 콜 + 채권</span>)에 따라 <b>채권 + 콜</b>은 <b>방어적 풋과 같은 수익구조</b>입니다. 원금보장형 ELD·ELS가 바로 이 구조예요. 금리가 낮거나 변동성이 높을수록 콜을 살 돈이 줄거나 콜이 비싸져 <b>참여율</b>이 떨어집니다. 금리 슬라이더로 확인해 보세요.</div>
+    <div class="pc">
+      <div class="box"><h3>장점</h3><ul><li>원금(보장액)이 채권으로 확실히 확보됨</li><li>최대손실 = 콜 매수에 쓴 이자 부분뿐</li></ul></div>
+      <div class="box"><h3>한계</h3><ul><li>저금리일수록 남는 이자가 적어 상승 참여율이 낮음</li><li>장기 콜옵션을 구하기 어려울 수 있음</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ③ synthetic put -->
+  <section class="card" data-v="sp" hidden>
+    <h2>③ 합성 풋 (동적헤징: 주식 + 채권)</h2>
+    <div class="formula">풋옵션을 사지 않고, 주식과 채권의 비중을 계속 조정해 '주식 + 풋'을 복제<br>보유 주식 수 = N(d₁) (방어적 풋의 델타) → 나머지는 채권</div>
+    <div class="chips" id="spScen"></div>
+    <div class="lesson" id="spLesson"></div>
+    <div class="stats" id="spStats"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>합성 풋 (실제 매매 결과)</span>
+      <span><i style="border-color:var(--s3)"></i>방어적 풋 이론가치 (목표)</span>
+      <span><i style="border-color:var(--s2)"></i>주가</span>
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>K의 현재가치</span>
+    </div>
+    <div class="chart" id="spChart"></div>
+    <h3>주식 노출 비중: 오르면 사고, 내리면 판다</h3>
+    <div class="chart" id="spW"></div>
+    <h3>왜 그런가: 델타 곡선</h3>
+    <p class="sub">주가가 높을수록 풋이 쓸모없어져 '주식 + 풋'의 델타 N(d₁)이 1에 가까워집니다. 그래서 주가가 오르면 주식을 더 보유하고, 내리면 줄입니다. CPPI와 같은 <b>추세추종</b>입니다.</p>
+    <div class="chart" id="spDelta"></div>
+    <div class="pc">
+      <div class="box"><h3>장점</h3><ul><li>실제 옵션 없이도 만기·행사가격을 마음대로 정할 수 있음</li></ul></div>
+      <div class="box"><h3>한계</h3><ul><li>잦은 매매 → 거래비용</li><li>변동성을 추정해야 하고, 실제 변동성이 더 크면 복제 비용 증가 (횡보장 참고)</li><li>연속 매매가 불가능 → 급락(갭) 시 하한이 깨질 수 있음 (1987 블랙먼데이)</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ④ futures -->
+  <section class="card" data-v="fu" hidden>
+    <h2>④ 선물을 이용한 동적헤징</h2>
+    <div class="formula">주식은 그대로 보유 + 주가지수선물 매도 비중을 조정<br>선물 매도 비중 = 1 − (합성 풋의 주식 노출 비중)</div>
+    <div class="chips" id="fuScen"></div>
+    <div class="lesson">③과 <b>경제적으로 같은 노출</b>을 만듭니다. 주식을 직접 사고파는 대신 선물만 매매하므로 빠르고 거래비용이 낮습니다. 아래 차트는 베이시스가 이론가격대로 움직인다고 가정해, 가치 경로가 ③과 같습니다.</div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--s3)"></span>선물 매도 비중</span>
+      <span><span class="sw" style="background:var(--s1-soft);border:1px solid var(--s1)"></span>남은 주식 노출</span>
+    </div>
+    <div class="chart" id="fuW"></div>
+    <div class="stats" id="fuStats"></div>
+    <div class="pc">
+      <div class="box"><h3>장점</h3><ul><li>거래비용이 낮고 매매가 신속</li><li>기존 주식 포트폴리오를 건드리지 않음</li></ul></div>
+      <div class="box"><h3>한계</h3><ul><li><b>베이시스 위험</b>: 선물이 이론가격에서 벗어나면 헤지 오차</li><li>선물 만기가 짧아 롤오버 필요</li><li>보유 주식과 지수의 차이(추적오차)</li></ul></div>
+    </div>
+  </section>
+
+  <!-- summary -->
+  <section class="card" data-v="sum" hidden>
+    <h2>시험용 정리</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>전략</th><th>구성</th><th>성격</th><th>핵심 한계</th></tr></thead>
+      <tbody>
+        <tr><td>방어적 풋</td><td>주식 + 풋 매수</td><td>정적</td><td>원하는 풋을 구하기 어려움, 프리미엄</td></tr>
+        <tr><td>이자추출</td><td>채권 + 콜 매수</td><td>정적</td><td>저금리 시 참여율 하락</td></tr>
+        <tr><td>합성 풋</td><td>주식 + 채권, N(d₁)로 조정</td><td>동적</td><td>거래비용, 변동성 추정, 갭 리스크</td></tr>
+        <tr><td>선물 동적헤징</td><td>주식 보유 + 지수선물 매도 조정</td><td>동적</td><td>베이시스 위험, 롤오버</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="ox">
+      <li>방어적 풋의 최대손실 = 주식 매입가 + 풋 프리미엄 − 행사가격 → <b>O</b></li>
+      <li>이자추출전략은 채권과 콜옵션 매수로 구성되며 방어적 풋과 수익구조가 같다 → <b>O</b> (풋-콜 패리티)</li>
+      <li>금리가 낮을수록 이자추출전략의 상승 참여율이 높아진다 → <b>X</b></li>
+      <li>합성 풋은 주가가 오르면 주식 비중을 줄인다 → <b>X</b> (늘림, 추세추종)</li>
+      <li>선물을 이용한 동적헤징은 주가가 내리면 선물 매도를 늘린다 → <b>O</b></li>
+      <li>합성 풋 전략을 쓰려면 실제 풋옵션이 있어야 한다 → <b>X</b></li>
+      <li>동적헤징은 급락 시에도 하한을 완벽히 보장한다 → <b>X</b> (갭 리스크)</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+const sgn = v => (v >= 0 ? "+" : "") + fmt(v);
+
+// ---------- Black-Scholes ----------
+function N(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2); return x >= 0 ? 0.5 * (1 + y) : 0.5 * (1 - y); }
+function bs(S, K, r, sig, tau) {
+  tau = Math.max(tau, 1e-6);
+  const d1 = (Math.log(S / K) + (r + sig * sig / 2) * tau) / (sig * Math.sqrt(tau)), d2 = d1 - sig * Math.sqrt(tau);
+  return { call: S * N(d1) - K * Math.exp(-r * tau) * N(d2), put: K * Math.exp(-r * tau) * N(-d2) - S * N(-d1), nd1: N(d1) };
+}
+const P = () => ({ K: +$("K").value, sig: +$("sig").value / 100, r: Math.log(1 + +$("rf").value / 100) });
+
+// ---------- SVG chart helpers ----------
+const NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs = {}, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.append(n); return n; }
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => span / k <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10)); return out;
+}
+const pathD = (xs, ys) => xs.map((x, i) => (i ? "L" : "M") + x.toFixed(1) + "," + ys[i].toFixed(1)).join("");
+/* opts: xs, series [{k,v,c,w,dash,area,hideLabel}], xFmt, yFmt, xTitle, height, yDomain, refs [{y,c,label}], tipTitle(i), extraRows(i) */
+function lineChart(box, o) {
+  box.replaceChildren();
+  const W = Math.max(box.clientWidth, 280), H = o.height || 280, M = { l: 40, r: W < 500 ? 78 : 104, t: 10, b: 34 };
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}` }); box.append(svg);
+  const all = o.series.flatMap(sr => sr.v).concat((o.refs || []).map(r => r.y));
+  let [lo, hi] = o.yDomain || [Math.min(...all), Math.max(...all)];
+  if (!o.yDomain) { const pad = (hi - lo) * 0.08 || 5; lo -= pad; hi += pad; }
+  const x0 = o.xs[0], x1 = o.xs.at(-1);
+  const x = v => M.l + (v - x0) / (x1 - x0) * (W - M.l - M.r), y = v => H - M.b - (v - lo) / (hi - lo) * (H - M.t - M.b);
+  for (const v of niceTicks(lo, hi)) {
+    s("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), style: "stroke:var(--grid)" }, svg);
+    s("text", { x: M.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = o.yFmt(v);
+  }
+  if (lo < 0 && hi > 0 && o.zero) s("line", { x1: M.l, x2: W - M.r, y1: y(0), y2: y(0), style: "stroke:var(--muted)", "stroke-width": 1 }, svg);
+  for (const v of niceTicks(x0, x1)) s("text", { x: x(v), y: H - M.b + 16, "text-anchor": "middle" }, svg).textContent = o.xFmt(v);
+  if (o.xTitle) s("text", { x: (M.l + W - M.r) / 2, y: H - 2, "text-anchor": "middle" }, svg).textContent = o.xTitle;
+  const xs = o.xs.map(x);
+  for (const r of o.refs || []) s("line", { x1: M.l, x2: W - M.r, y1: y(r.y), y2: y(r.y), style: `stroke:${r.c || "var(--ref)"}`, "stroke-dasharray": "5 4", "stroke-width": 1.5 }, svg);
+  for (const sr of o.series) {
+    if (sr.area) s("path", { d: pathD(xs, sr.v.map(y)) + `L${xs.at(-1)},${y(lo)}L${xs[0]},${y(lo)}Z`, style: `fill:${sr.area}` }, svg);
+    s("path", { d: pathD(xs, sr.v.map(y)), fill: "none", style: `stroke:${sr.c}`, "stroke-width": sr.w || 2, "stroke-linejoin": "round", ...(sr.dash ? { "stroke-dasharray": sr.dash } : {}) }, svg);
+  }
+  const ends = o.series.filter(sr => !sr.hideLabel).map(sr => ({ k: sr.k, y: y(sr.v.at(-1)), c: sr.c }))
+    .concat((o.refs || []).filter(r => r.label).map(r => ({ k: r.label, y: y(r.y), c: r.c || "var(--ref)" }))).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const e of ends) {
+    s("rect", { x: W - M.r + 6, y: e.y - 4, width: 8, height: 8, rx: 2, style: `fill:${e.c}` }, svg);
+    s("text", { x: W - M.r + 18, y: e.y + 4, class: "dl" }, svg).textContent = e.k;
+  }
+  for (const mk of o.marks || []) s("circle", { cx: x(mk.x), cy: y(mk.y), r: 6, fill: "none", style: `stroke:${mk.c}`, "stroke-width": 2 }, svg);
+  // hover
+  const g = s("g", { style: "pointer-events:none", visibility: "hidden" }, svg);
+  const vl = s("line", { y1: M.t, y2: H - M.b, style: "stroke:var(--muted)", "stroke-width": 1 }, g);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  const hit = s("rect", { x: M.l, y: M.t, width: W - M.l - M.r, height: H - M.t - M.b, fill: "transparent" }, svg);
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    let i = 0, best = 1e9; xs.forEach((xv, k) => { const d = Math.abs(xv - px); if (d < best) { best = d; i = k; } });
+    vl.setAttribute("x1", xs[i]); vl.setAttribute("x2", xs[i]);
+    g.querySelectorAll("circle").forEach(c => c.remove());
+    for (const sr of o.series) s("circle", { cx: xs[i], cy: y(sr.v[i]), r: 4.5, style: `fill:${sr.c};stroke:var(--surface)`, "stroke-width": 2 }, g);
+    g.setAttribute("visibility", "visible");
+    const rows = o.series.map(sr => ({ k: sr.k, v: (sr.fmt || o.yFmtTip || o.yFmt)(sr.v[i]), c: sr.c })).concat(o.extraRows ? o.extraRows(i) : []);
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${o.tipTitle(i)}</div>` +
+      rows.map(rw => `<div class="row"><span><span class="sw" style="background:${rw.c}"></span>${rw.k}</span><b>${rw.v}</b></div>`).join("");
+    tip.hidden = false;
+    const bw = box.clientWidth; tip.style.left = Math.min(Math.max(xs[i] * r.width / W + 12, 0), bw - tip.offsetWidth) + "px";
+    tip.style.top = Math.max((ev.clientY - r.top) - tip.offsetHeight - 8, 0) + "px";
+  };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { g.setAttribute("visibility", "hidden"); tip.hidden = true; });
+}
+const stat = (k, v, note) => `<div class="stat"><div class="k">${k}</div><b>${v}</b>${note ? `<div class="sub">${note}</div>` : ""}</div>`;
+const ST = Array.from({ length: 101 }, (_, i) => 50 + i); // terminal prices 50..150
+
+// ---------- ① protective put ----------
+function renderPP() {
+  const { K, sig, r } = P(), put = bs(100, K, r, sig, 1).put;
+  const stock = ST.map(x => x - 100), putPL = ST.map(x => Math.max(K - x, 0) - put), pp = ST.map((_, i) => stock[i] + putPL[i]);
+  $("ppStats").innerHTML = stat("풋 프리미엄", fmt(put, 2)) + stat("최대손실", fmt(100 + put - K, 2), "= 100 + 프리미엄 − K") +
+    stat("손익분기 주가", fmt(100 + put, 2), "= 100 + 프리미엄") + stat("상승 시 이익", "주가 − " + fmt(100 + put, 1), "프리미엄만큼 덜 벎");
+  lineChart($("ppChart"), {
+    xs: ST, zero: true, height: 300, xFmt: v => v, yFmt: v => fmt(v, 0), yFmtTip: v => sgn(v), xTitle: "만기 주가 (현재 100)",
+    series: [{ k: "주식만", v: stock, c: "var(--s2)" }, { k: "풋 매수", v: putPL, c: "var(--s3)" }, { k: "방어적 풋", v: pp, c: "var(--s1)", w: 3 }],
+    tipTitle: i => `만기 주가 ${ST[i]}`
+  });
+}
+
+// ---------- ② interest extraction ----------
+function renderIE() {
+  const { sig, r } = P(), F = +$("F").value, rfPct = +$("rf").value;
+  $("oF").textContent = F + "% (보장수익률 " + (F - 100) + "%)";
+  const bond = F * Math.exp(-r), left = 100 - bond, call = bs(100, 100, r, sig, 1).call, n = Math.max(left, 0) / call;
+  const seg = (id, v, label) => { const e = $(id); e.style.flex = `0 0 calc(${Math.max(v, 0)}% - 1px)`; e.textContent = v >= 14 ? label : ""; e.title = label; };
+  seg("ieBond", Math.min(bond, 100), "채권 " + fmt(bond)); seg("ieCall", Math.max(left, 0), "콜 " + fmt(left));
+  const w = $("ieWarn");
+  if (left < 0) { w.hidden = false; w.innerHTML = `<b>보장 불가:</b> 보장수익률 ${F - 100}%가 무위험수익률 ${rfPct}%보다 높아, 원금 전부를 채권에 넣어도 ${fmt(100 * (1 + rfPct / 100))}밖에 안 됩니다. 콜을 살 돈도 없습니다.`; }
+  else w.hidden = true;
+  $("ieStats").innerHTML = stat("채권 투자", fmt(bond, 2), `만기에 ${F}이 됨`) + stat("콜 매수 예산", fmt(Math.max(left, 0), 2), "= 이자 부분") +
+    stat("ATM 콜 가격", fmt(call, 2)) + stat("상승 참여율", left < 0 ? "—" : fmt(n * 100, 0) + "%", "주가 상승분의 몇 %를 얻나");
+  const val = ST.map(x => left < 0 ? bond * Math.exp(r) : F + n * Math.max(x - 100, 0));
+  lineChart($("ieChart"), {
+    xs: ST, height: 300, xFmt: v => v, yFmt: v => fmt(v, 0), xTitle: "만기 주가 (현재 100)",
+    series: [{ k: "주식 100%", v: ST.slice(), c: "var(--s2)" }, { k: "이자추출", v: val, c: "var(--s1)", w: 3 }],
+    refs: [{ y: Math.min(F, bond * Math.exp(r)), label: "보장액" }],
+    tipTitle: i => `만기 주가 ${ST[i]}`
+  });
+}
+
+// ---------- ③ / ④ dynamic replication ----------
+const T = 20;
+const SCEN = {
+  up: { name: "상승 추세", rets: Array.from({ length: T }, (_, i) => i % 2 ? 0.01 : 0.03) },
+  down: { name: "하락 추세", rets: Array.from({ length: T }, (_, i) => i % 2 ? -0.01 : -0.03) },
+  side: { name: "횡보 (큰 등락)", rets: Array.from({ length: T }, (_, i) => i % 2 ? -0.08 : 0.09) },
+  crash: { name: "폭락 (갭)", rets: Array.from({ length: T }, (_, i) => i === 8 ? -0.35 : 0.01) }
+};
+let scen = "down";
+function replicate() {
+  const { K, sig, r } = P(), dt = 1 / T, rets = SCEN[scen].rets;
+  let S = 100; const p0 = bs(S, K, r, sig, 1);
+  let V = S + p0.put;
+  const Sx = [S], Vx = [V], tgt = [V], pvK = [K * Math.exp(-r)], expo = [], trades = [];
+  let shares = 0;
+  for (let t = 0; t < T; t++) {
+    const tau = 1 - t * dt, d = bs(S, K, r, sig, tau).nd1;
+    trades.push(d - shares); shares = d;
+    expo.push(d * S / V);
+    const B = V - d * S;
+    S *= 1 + rets[t];
+    V = d * S + B * Math.exp(r * dt);
+    const tau2 = 1 - (t + 1) * dt;
+    Sx.push(S); Vx.push(V); tgt.push(tau2 <= 1e-9 ? Math.max(S, K) : S + bs(S, K, r, sig, tau2).put); pvK.push(K * Math.exp(-r * Math.max(tau2, 0)));
+  }
+  return { Sx, Vx, tgt, pvK, expo, trades, K, cost: p0.put, err: V - Math.max(S, K) };
+}
+function scenChips(id) {
+  const box = $(id); box.replaceChildren();
+  for (const [k, v] of Object.entries(SCEN)) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = v.name; b.setAttribute("aria-pressed", String(k === scen));
+    b.onclick = () => { scen = k; render(); }; box.append(b);
+  }
+}
+const steps = Array.from({ length: T + 1 }, (_, i) => i);
+function renderSP() {
+  scenChips("spScen");
+  const R = replicate();
+  const L = {
+    up: "주가가 오를수록 델타가 1에 가까워져 주식을 계속 늘립니다. 결과는 목표(방어적 풋)와 비슷하고 약간 높습니다. 실제 등락이 가정한 변동성보다 작아 복제 비용이 덜 들었기 때문입니다.",
+    down: "주가가 내릴수록 주식을 팔아 채권으로 옮깁니다. 하락이 K 근처에서 멈춰 하한이 지켜집니다.",
+    side: "실제 등락폭이 가정한 변동성보다 훨씬 큽니다. 오른 뒤 사고 내린 뒤 팔기를 반복해, 결과가 목표보다 낮아집니다 (복제 비용 증가).",
+    crash: "리밸런싱 사이에 한 번에 35% 급락합니다. 주식을 팔 틈이 없어 결과가 목표와 하한 아래로 떨어집니다 (갭 리스크)."
+  }[scen];
+  $("spLesson").innerHTML = `<b>${SCEN[scen].name}:</b> ${L}`;
+  $("spStats").innerHTML = stat("시작 비용", fmt(100 + R.cost, 2), "주가 100 + 풋 가격") + stat("최종 가치 (합성)", fmt(R.Vx.at(-1), 2)) +
+    stat("목표 (방어적 풋)", fmt(R.tgt.at(-1), 2), "max(주가, K)") + stat("복제 오차", sgn(R.err), Math.abs(R.err) < 0.5 ? "거의 정확" : R.err < 0 ? "목표보다 부족" : "목표보다 많음");
+  const box = $("spChart");
+  lineChart(box, {
+    xs: steps, height: 290, xFmt: v => v, yFmt: v => fmt(v, 0), xTitle: "리밸런싱 횟수 (1년, 20회)",
+    series: [{ k: "K 현재가치", v: R.pvK, c: "var(--ref)", dash: "5 4", w: 1.5 }, { k: "주가", v: R.Sx, c: "var(--s2)" }, { k: "목표", v: R.tgt, c: "var(--s3)" }, { k: "합성 풋", v: R.Vx, c: "var(--s1)", w: 3 }],
+    marks: R.err < -0.5 ? [{ x: T, y: R.Vx.at(-1), c: "var(--bad)" }] : [],
+    tipTitle: i => i ? `${i}회차 · 주가 ${sgn(SCEN[scen].rets[i - 1] * 100)}%` : "시작"
+  });
+  stepChart($("spW"), R, "주식 노출", e => e * 100, "var(--s1)", "var(--s1-soft)");
+  // delta curve
+  const { K, sig, r } = P(), Ss = Array.from({ length: 81 }, (_, i) => 60 + i);
+  lineChart($("spDelta"), {
+    xs: Ss, height: 220, yDomain: [0, 100], xFmt: v => v, yFmt: v => v + "%", xTitle: "현재 주가 (만기 1년 남음)",
+    series: [{ k: "N(d₁)", v: Ss.map(x => bs(x, K, r, sig, 1).nd1 * 100), c: "var(--s1)", w: 2.5 }],
+    refs: [{ y: 50, c: "var(--grid)" }],
+    tipTitle: i => `주가 ${Ss[i]}`, extraRows: i => [{ k: "풋 가격", v: fmt(bs(Ss[i], K, r, sig, 1).put, 2), c: "var(--s3)" }]
+  });
+}
+function stepChart(box, R, name, f, c, area) {
+  const xx = [], vv = [];
+  R.expo.forEach((e, i) => { xx.push(i + 0.5); vv.push(f(e)); });
+  lineChart(box, {
+    xs: xx, height: 200, yDomain: [0, 100], xFmt: v => Math.round(v), yFmt: v => v + "%", xTitle: "리밸런싱 구간",
+    series: [{ k: name, v: vv, c, area, w: 2 }],
+    tipTitle: i => `${i}회차 리밸런싱 후`,
+    extraRows: i => [{ k: "주식 매매", v: (R.trades[i] >= 0 ? "매수 " : "매도 ") + fmt(Math.abs(R.trades[i]) * 100, 1) + "%주", c: "transparent" }]
+  });
+}
+function renderFU() {
+  scenChips("fuScen");
+  const R = replicate(), xx = R.expo.map((_, i) => i + 0.5);
+  lineChart($("fuW"), {
+    xs: xx, height: 230, yDomain: [0, 100], xFmt: v => Math.round(v), yFmt: v => v + "%", xTitle: "리밸런싱 구간",
+    series: [{ k: "주식 노출", v: R.expo.map(e => e * 100), c: "var(--s1)", area: "var(--s1-soft)", w: 1.5 },
+             { k: "선물 매도", v: R.expo.map(e => 100 - e * 100), c: "var(--s3)", w: 2.5 }],
+    tipTitle: i => `${i}회차 · 주가 ${fmt(R.Sx[i], 1)}`
+  });
+  const maxH = Math.max(...R.expo.map(e => 1 - e)), lastH = 1 - R.expo.at(-1);
+  $("fuStats").innerHTML = stat("시작 선물 매도", fmt((1 - R.expo[0]) * 100, 0) + "%") + stat("최대 선물 매도", fmt(maxH * 100, 0) + "%") +
+    stat("마지막 선물 매도", fmt(lastH * 100, 0) + "%") + stat("최종 가치", fmt(R.Vx.at(-1), 2), "③ 합성 풋과 동일");
+}
+
+// ---------- page ----------
+let tab = "pp";
+function render() {
+  const { K, sig } = P();
+  $("oK").textContent = K; $("oS").textContent = Math.round(sig * 100) + "%"; $("oR").textContent = (+$("rf").value).toFixed(1) + "%";
+  document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.t === tab)));
+  document.querySelectorAll("[data-v]").forEach(v => v.hidden = v.dataset.v !== tab);
+  ({ pp: renderPP, ie: renderIE, sp: renderSP, fu: renderFU, sum: () => {} })[tab]();
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
+["K", "sig", "rf", "F"].forEach(id => $(id).addEventListener("input", render));
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(render, 80); }).observe(document.querySelector(".wrap"));
+render();
+</script>
+</body>
+</html>

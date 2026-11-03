@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>합성 CDO 구조</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8; --grid:#E8ECF1;
+  --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#6B7385; --s1-soft:rgba(42,120,214,.16); --s3-soft:rgba(27,175,122,.18);
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+    --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+  --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:22px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+h3{font-size:15.5px;font-weight:600;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:64ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--chip);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ctl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.ctl output{font:500 14px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:500 14.5px var(--body);color:var(--muted);cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13.5px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.lesson{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14.5px}
+.warn{background:var(--accent-soft);border-left:3px solid var(--bad);padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat b{display:block;font:500 21px var(--mono);font-variant-numeric:tabular-nums}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pc ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.pc .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+.stack{display:flex;gap:2px;height:30px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg{display:flex;align-items:center;justify-content:center;font:500 12px var(--mono);white-space:nowrap;overflow:hidden;transition:flex-basis .25s}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.chart .dl{font-size:12px;font-weight:600;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:160px;z-index:2}
+.tip .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip b{font:500 12.5px var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:13.5px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;background:var(--chip)}
+.ox li{margin:4px 0}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pc{grid-template-columns:1fr}}
+.flow{display:grid;gap:10px;grid-template-columns:1.1fr .9fr 1.1fr .9fr 1.1fr;grid-template-areas:"ref . . . ." "a0 . . . ." "buyer a1 spv a2 inv" ". . a3 . inv" ". . col . .";align-items:center}
+.node{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:3px;font-size:13px;background:var(--bg);min-width:0}
+.node b{font-size:15px}
+.node span{color:var(--muted)}
+.node.spv{border-color:var(--accent);background:var(--accent-soft)}
+.node.inv{gap:4px}
+.arrow{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:12px;text-align:center;color:var(--ink)}
+.arrow span{background:var(--chip);border-radius:6px;padding:3px 7px}
+.arrow.v span::before{content:"↓ ";color:var(--muted)}
+.tr{border-radius:5px;padding:3px 8px;font:500 12.5px var(--body);color:#fff}
+.tr.ss,.sw.ss{background:#9cc2ee;color:#0b2540}
+.tr.sr,.sw.sr{background:#5a9ee6}
+.tr.mz,.sw.mz{background:#2a78d6}
+.tr.eq,.sw.eq{background:#184f94}
+.tranches{display:grid;gap:10px}
+.trow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.4fr) minmax(0,.8fr);gap:10px;align-items:center}
+.tname{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-width:0}
+.tname .sub{width:100%;font-size:12.5px}
+.tbar{height:22px;border-radius:5px;background:var(--chip);overflow:hidden}
+.tfill{height:100%;background:var(--bad);transition:width .2s}
+.tval{font:500 13px var(--mono);text-align:right}
+@media (max-width:700px){
+  .flow{grid-template-columns:1fr;grid-template-areas:"ref" "a0" "buyer" "a1" "spv" "a3" "col" "a2" "inv"}
+  .trow{grid-template-columns:1fr;gap:4px}.tval{text-align:left}
+}
+[hidden]{display:none!important}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">투자자산운용사 · 대안투자 · 신용파생상품</div>
+    <h1>합성 CDO 구조</h1>
+    <p class="lede">합성 CDO는 은행이 대출(준거자산)을 <b>팔지 않고</b>, CDS로 그 <b>신용위험만</b> SPV에 넘기는 구조입니다. SPV는 투자자에게 트랜치를 팔아 위험을 나눠 집니다. <a href="invest.html">← 노트로</a></p>
+  </header>
+
+  <section class="card" aria-labelledby="h1">
+    <h2 id="h1">1. 돈과 위험이 흐르는 길</h2>
+    <div class="flow">
+      <div class="node ref" style="grid-area:ref">
+        <div class="label">준거자산 (Reference Portfolio)</div>
+        <b>기업 대출·채권 100개</b>
+        <span>은행이 <u>그대로 보유</u> (SPV로 양도하지 않음)</span>
+      </div>
+      <div class="arrow v" style="grid-area:a0"><span>신용위험만 떼어냄</span></div>
+      <div class="node buyer" style="grid-area:buyer">
+        <div class="label">보장매수자 (Protection Buyer)</div>
+        <b>은행</b>
+        <span>신용위험을 넘기고 싶음</span>
+      </div>
+      <div class="arrow h" style="grid-area:a1">
+        <span class="r">① CDS 프리미엄 →</span>
+        <span class="l">← ② 신용사건 시 손실 보전</span>
+      </div>
+      <div class="node spv" style="grid-area:spv">
+        <div class="label">SPV (특수목적기구)</div>
+        <b>보장매도자</b>
+        <span>CDS로 위험을 받고, 트랜치로 쪼개 판매</span>
+      </div>
+      <div class="arrow h" style="grid-area:a2">
+        <span class="l">← ③ 투자금 납입</span>
+        <span class="r">④ 이자 + 원금 →</span>
+      </div>
+      <div class="node inv" style="grid-area:inv">
+        <div class="label">투자자 (트랜치 매수)</div>
+        <div class="tr ss">슈퍼 시니어</div>
+        <div class="tr sr">시니어</div>
+        <div class="tr mz">메자닌</div>
+        <div class="tr eq">에쿼티</div>
+        <span>손실은 <b>아래(에쿼티)부터</b></span>
+      </div>
+      <div class="arrow v" style="grid-area:a3"><span>⑤ 투자금으로 매입 ↓ / 이자 ↑</span></div>
+      <div class="node col" style="grid-area:col">
+        <div class="label">담보자산 (Collateral)</div>
+        <b>국채 등 고신용 자산</b>
+        <span>신용사건이 나면 일부를 팔아 ②를 지급</span>
+      </div>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>단계</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>①</td><td>은행이 SPV에 <b>CDS 프리미엄</b>을 냅니다. 보험료 성격입니다</td></tr>
+        <tr><td>③ → ⑤</td><td>투자자가 낸 돈으로 SPV가 <b>안전한 담보자산</b>을 삽니다. 은행에 손실을 보전해 줄 재원입니다</td></tr>
+        <tr><td>④</td><td>투자자 수익 = <b>담보자산 이자 + CDS 프리미엄</b>. 위험한 트랜치일수록 프리미엄 몫이 큽니다</td></tr>
+        <tr><td>②</td><td>준거자산에서 부도 같은 <b>신용사건</b>이 나면 SPV가 담보를 팔아 은행 손실을 메우고, 그만큼 <b>에쿼티 트랜치부터</b> 원금이 깎입니다</td></tr>
+        <tr><td>만기</td><td>신용사건이 없으면 담보자산을 팔아 투자자에게 원금을 돌려줍니다</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="card" aria-labelledby="h2">
+    <h2 id="h2">2. 손실은 어떻게 나뉠까 (Loss Waterfall)</h2>
+    <p class="sub">준거자산 1,000억원 = 100개 기업 × 10억원. 부도 1건당 회수율 40%라 손실은 6억원(포트폴리오의 0.6%)입니다. 부도 건수를 늘려 보세요.</p>
+    <label class="ctl" style="max-width:440px">부도 기업 수 <output id="oN"></output><input type="range" id="N" min="0" max="40" step="1" value="7"></label>
+    <div class="stats" id="lossStats"></div>
+    <div id="tranches" class="tranches"></div>
+    <div class="lesson" id="lossLesson"></div>
+    <p class="sub">트랜치 구간(어태치먼트 ~ 디태치먼트)과 금리는 이해를 돕기 위한 예시입니다.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h3">
+    <h2 id="h3">3. 현금흐름 CDO vs 합성 CDO</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>구분</th><th>현금흐름 (Cash) CDO</th><th>합성 (Synthetic) CDO</th></tr></thead>
+      <tbody>
+        <tr><td>기초자산 이전</td><td>대출·채권을 SPV에 <b>실제로 양도</b> (진정매각)</td><td><b>양도하지 않음</b>, 은행이 계속 보유</td></tr>
+        <tr><td>위험 이전 수단</td><td>자산 자체를 넘김</td><td><b>CDS</b>로 신용위험만 넘김</td></tr>
+        <tr><td>SPV가 가진 자산</td><td>기초자산 포트폴리오</td><td>고신용 <b>담보자산</b> + CDS 매도 포지션</td></tr>
+        <tr><td>투자자 수익 원천</td><td>기초자산의 이자</td><td><b>담보 이자 + CDS 프리미엄</b></td></tr>
+        <tr><td>장점</td><td>자금 조달 효과</td><td>고객 관계 유지(대출 매각 통보 불필요), 법률·세무 절차 간단, <b>빠르고 유연</b></td></tr>
+      </tbody>
+    </table></div>
+    <div class="pc">
+      <div class="box"><h3>자금조달 방식</h3><ul>
+        <li><b>완전자금조달형 (fully funded):</b> 모든 트랜치를 증권(CLN)으로 발행해 투자금을 미리 받음</li>
+        <li><b>부분자금조달형 (partially funded):</b> 슈퍼 시니어는 증권 없이 <b>별도 CDS</b>로만 넘김 (돈을 미리 받지 않음)</li>
+        <li><b>무자금조달형 (unfunded):</b> 전부 CDS 계약으로만 위험 이전</li>
+      </ul></div>
+      <div class="box"><h3>목적에 따른 분류</h3><ul>
+        <li><b>대차대조표형 (Balance Sheet):</b> 은행이 위험자산을 줄여 <b>BIS 자기자본비율</b> 개선, 신용위험 관리</li>
+        <li><b>차익거래형 (Arbitrage):</b> 기초자산 수익률과 트랜치 지급 금리의 <b>차이</b>로 수익 추구</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h4">
+    <h2 id="h4">4. 심화: 부도 상관관계가 바뀌면</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>부도 상관관계 상승</th><th>의미</th><th>결과</th></tr></thead>
+      <tbody>
+        <tr><td>에쿼티</td><td>"다 같이 괜찮거나, 다 같이 망한다" → 손실 0인 시나리오가 늘어남</td><td><b>유리</b> (가치 상승)</td></tr>
+        <tr><td>시니어·슈퍼 시니어</td><td>한꺼번에 대량 부도가 날 가능성 증가 → 위쪽까지 손실이 닿음</td><td><b>불리</b> (가치 하락)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">2008년 금융위기 때 "안전하다"던 시니어 트랜치가 큰 손실을 본 이유가 바로 상관관계 급등입니다.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h5">
+    <h2 id="h5">5. 함정 O/X</h2>
+    <ul class="ox">
+      <li>합성 CDO는 준거자산을 SPV에 양도한다 → <b>X</b> (CDS로 신용위험만 이전)</li>
+      <li>합성 CDO에서 보장매수자(은행)는 CDS 프리미엄을 지급한다 → <b>O</b></li>
+      <li>신용사건이 발생하면 손실은 선순위 트랜치부터 흡수한다 → <b>X</b> (에쿼티부터)</li>
+      <li>에쿼티 트랜치는 위험이 가장 크므로 약정 수익률이 가장 높다 → <b>O</b></li>
+      <li>합성 CDO 투자자의 수익은 담보자산 이자와 CDS 프리미엄으로 구성된다 → <b>O</b></li>
+      <li>대차대조표형 CDO의 주목적은 은행의 자기자본비율 개선과 위험 관리다 → <b>O</b></li>
+      <li>부도 상관관계가 높아지면 시니어 트랜치 투자자에게 유리하다 → <b>X</b></li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+const TR = [ // top (senior) to bottom (equity); attach/detach in % of portfolio
+  { k: "슈퍼 시니어", cls: "ss", a: 15, d: 100, rate: "연 0.3%" },
+  { k: "시니어", cls: "sr", a: 7, d: 15, rate: "연 1%" },
+  { k: "메자닌", cls: "mz", a: 3, d: 7, rate: "연 4%" },
+  { k: "에쿼티", cls: "eq", a: 0, d: 3, rate: "연 15%" }
+];
+const TOTAL = 1000, PER = 0.6; // 억원, % loss per default (recovery 40%)
+function render() {
+  const n = +$("N").value, L = n * PER;
+  $("oN").textContent = n + "개 (포트폴리오 손실 " + fmt(L) + "%)";
+  $("lossStats").innerHTML = [["부도 기업", n + "개"], ["손실률", fmt(L) + "%"], ["손실액", fmt(L * TOTAL / 100, 0) + "억"], ["회수율 가정", "40%"]]
+    .map(([k, v]) => `<div class="stat"><div class="k">${k}</div><b>${v}</b></div>`).join("");
+  const box = $("tranches"); box.replaceChildren();
+  const hit = [];
+  for (const t of TR) {
+    const size = (t.d - t.a) * TOTAL / 100, lossPct = Math.min(Math.max((L - t.a) / (t.d - t.a), 0), 1), loss = lossPct * size;
+    if (lossPct > 0) hit.push(`${t.k} ${fmt(lossPct * 100, 0)}%`);
+    const row = document.createElement("div"); row.className = "trow";
+    row.innerHTML = `<div class="tname"><span class="sw ${t.cls}"></span><b>${t.k}</b><span class="sub">${t.a}~${t.d}% · ${fmt(size, 0)}억 · ${t.rate}</span></div>
+      <div class="tbar" role="img" aria-label="${t.k} 원금 손실 ${fmt(lossPct * 100, 0)}%"><div class="tfill" style="width:${lossPct * 100}%"></div></div>
+      <div class="tval">${lossPct > 0 ? `<b style="color:var(--bad)">−${fmt(loss, 0)}억</b> (${fmt(lossPct * 100, 0)}%)` : "손실 없음"}</div>`;
+    box.append(row);
+  }
+  const wiped = TR.filter(t => L >= t.d).map(t => t.k);
+  $("lossLesson").innerHTML = n === 0 ? "부도가 없으면 모든 트랜치가 약정 금리를 받고 만기에 원금을 돌려받습니다."
+    : `손실 ${fmt(L)}%는 <b>에쿼티(0~3%)부터</b> 채웁니다. 지금 손실을 입은 트랜치: <b>${hit.join(", ")}</b>.` +
+      (wiped.length ? ` ${wiped.join(", ")} 트랜치는 원금이 <b>전부</b> 사라졌습니다.` : "") +
+      (L < 7 ? " 시니어 이상은 아직 안전합니다. 아래 트랜치가 쿠션(신용보강) 역할을 하기 때문입니다." : "");
+}
+$("N").addEventListener("input", render);
+render();
+</script>
+</body>
+</html>

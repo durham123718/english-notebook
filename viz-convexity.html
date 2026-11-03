@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>볼록성 시각화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8; --grid:#E8ECF1;
+  --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#6B7385; --s1-soft:rgba(42,120,214,.16); --s3-soft:rgba(27,175,122,.18);
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+    --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+  --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:22px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+h3{font-size:15.5px;font-weight:600;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:64ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--chip);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ctl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.ctl output{font:500 14px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:500 14.5px var(--body);color:var(--muted);cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13.5px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.lesson{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14.5px}
+.warn{background:var(--accent-soft);border-left:3px solid var(--bad);padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat b{display:block;font:500 21px var(--mono);font-variant-numeric:tabular-nums}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pc ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.pc .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+.stack{display:flex;gap:2px;height:30px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg{display:flex;align-items:center;justify-content:center;font:500 12px var(--mono);white-space:nowrap;overflow:hidden;transition:flex-basis .25s}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.chart .dl{font-size:12px;font-weight:600;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:160px;z-index:2}
+.tip .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip b{font:500 12.5px var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:13.5px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;background:var(--chip)}
+.ox li{margin:4px 0}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pc{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid3 h3{font-size:14px;margin:0 0 4px}
+@media (max-width:760px){.grid3{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">투자자산운용사 · 채권투자운용</div>
+    <h1>볼록성(Convexity) 시각화</h1>
+    <p class="lede">볼록성은 가격-수익률 곡선이 얼마나 휘었는지입니다. 듀레이션은 곡선을 직선으로 어림하고, 볼록성은 그 오차를 메웁니다. 볼록성이 큰 채권은 금리가 내리면 더 오르고, 오르면 덜 떨어집니다. 모든 계산은 연 1회 이자 지급, 액면 100 기준입니다. <a href="invest.html">← 노트로</a></p>
+  </header>
+
+  <section class="card">
+    <h2>내 채권 설정</h2>
+    <div class="controls">
+      <label class="ctl">만기 (년) <output id="oN"></output><input type="range" id="N" min="1" max="30" step="1" value="10"></label>
+      <label class="ctl">표면이자율 <output id="oC"></output><input type="range" id="C" min="0" max="10" step="0.5" value="3"></label>
+      <label class="ctl">현재 만기수익률 <output id="oY"></output><input type="range" id="Y" min="1" max="10" step="0.25" value="4"></label>
+    </div>
+    <div class="stats" id="bondStats"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h1">
+    <h2 id="h1">1. 가격-수익률 곡선: 듀레이션은 직선, 실제는 곡선</h2>
+    <div class="legend">
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>실제 가격</span>
+      <span><i style="border-color:var(--s2);border-top-style:dashed"></i>듀레이션만으로 추정 (접선)</span>
+      <span><i style="border-color:var(--s3)"></i>듀레이션 + 볼록성 추정</span>
+    </div>
+    <div class="chart" id="pyChart"></div>
+    <label class="ctl" style="max-width:420px">금리 변화 Δy <output id="oD"></output><input type="range" id="D" min="-3" max="3" step="0.25" value="2"></label>
+    <div class="tbl"><table id="estTable"></table></div>
+    <div class="lesson" id="pyLesson"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h2">
+    <h2 id="h2">2. 듀레이션이 같아도 볼록성이 크면 유리: 바벨형 vs 불릿형</h2>
+    <p class="sub">둘 다 듀레이션은 같습니다. <b>불릿형</b>은 10년 무이표채 하나이고, <b>바벨형</b>은 2년과 18년 무이표채를 반씩 섞었습니다. 만기가 양 끝으로 퍼진 바벨형의 볼록성이 더 큽니다. 현재 수익률은 위 설정을 따릅니다.</p>
+    <div class="stats" id="bbStats"></div>
+    <div class="legend">
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>바벨형 (볼록성 큼)</span>
+      <span><i style="border-color:var(--s2)"></i>불릿형 (볼록성 작음)</span>
+    </div>
+    <div class="chart" id="bbChart"></div>
+    <h3>차이만 확대해서 보기 (바벨형 − 불릿형)</h3>
+    <div class="chart" id="bbDiff"></div>
+    <div class="lesson">금리가 <b>어느 방향으로 움직이든</b> 바벨형이 더 낫습니다. 오르면 덜 잃고, 내리면 더 법니다. 그래서 금리 <b>변동성이 클 것으로 예상될 때</b> 볼록성이 큰 채권(바벨형)이 유리합니다. 대신 시장에서는 이 장점 때문에 볼록성이 큰 채권의 수익률이 조금 낮게(가격은 비싸게) 형성되는 경향이 있습니다.</div>
+  </section>
+
+  <section class="card" aria-labelledby="h3">
+    <h2 id="h3">3. 무엇이 볼록성을 키울까?</h2>
+    <p class="sub">위에서 설정한 채권을 기준으로 하나씩만 바꿔 봤습니다. 점은 지금 내 채권입니다.</p>
+    <div class="grid3">
+      <div><h3>만기 ↑ → 볼록성 ↑</h3><div class="chart" id="detN"></div></div>
+      <div><h3>표면이자율 ↓ → 볼록성 ↑</h3><div class="chart" id="detC"></div></div>
+      <div><h3>수익률 ↓ → 볼록성 ↑</h3><div class="chart" id="detY"></div></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h4">
+    <h2 id="h4">4. 음(−)의 볼록성: 수의상환채권 (콜러블)</h2>
+    <p class="sub">발행회사가 정해진 가격(여기서는 105)에 미리 갚아버릴 수 있는 채권입니다. 금리가 떨어져 가격이 오르면 회사가 상환해 버리니, 가격이 <b>위로 눌립니다</b>. 그래서 금리가 낮은 구간에서 곡선이 <b>오목</b>해집니다. 이를 음의 볼록성이라고 하고, MBS(주택저당증권)도 조기상환 때문에 같은 성질을 보입니다. 아래는 개념을 보여주기 위한 단순화 그림입니다.</p>
+    <div class="legend">
+      <span><i style="border-color:var(--s2)"></i>일반채권 (양의 볼록성)</span>
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>수의상환채권 (저금리에서 음의 볼록성)</span>
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>상환가격 105</span>
+    </div>
+    <div class="chart" id="callChart"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h5">
+    <h2 id="h5">5. 시험용 정리</h2>
+    <div class="formula">가격변화율 ≈ − 수정듀레이션 × Δy + ½ × 볼록성 × (Δy)²</div>
+    <p class="sub">⚠️ 교재에 따라 볼록성 값에 ½이 이미 포함된 경우가 있습니다. 문제에서 주는 식을 꼭 확인하세요.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>성질</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>볼록성 효과의 부호</td><td>(Δy)²는 항상 양수 → 일반채권은 금리가 오르든 내리든 <b>가격에 플러스</b></td></tr>
+        <tr><td>듀레이션만 쓰면</td><td>금리 하락 시 가격 상승을 <b>과소평가</b>, 금리 상승 시 가격 하락을 <b>과대평가</b></td></tr>
+        <tr><td>볼록성 커지는 조건</td><td><b>만기가 길수록, 표면이자율이 낮을수록, 수익률이 낮을수록</b></td></tr>
+        <tr><td>같은 듀레이션이면</td><td>볼록성 큰 채권이 유리 → <b>바벨형 &gt; 불릿형</b></td></tr>
+        <tr><td>금리 변화가 작을 때</td><td>볼록성 효과는 (Δy)²라 미미 → 듀레이션만으로도 근사가 정확</td></tr>
+        <tr><td>음의 볼록성</td><td>수의상환채권(콜러블), MBS: 금리 하락 시 가격 상승이 제한됨</td></tr>
+      </tbody>
+    </table></div>
+    <ul class="ox">
+      <li>듀레이션이 같다면 볼록성이 큰 채권이 유리하다 → <b>O</b></li>
+      <li>표면이자율이 높을수록 볼록성이 크다 → <b>X</b> (낮을수록 큼)</li>
+      <li>듀레이션만으로 추정하면 금리 상승 시 가격 하락폭을 과소평가한다 → <b>X</b> (과대평가)</li>
+      <li>불릿형 포트폴리오는 같은 듀레이션의 바벨형보다 볼록성이 크다 → <b>X</b></li>
+      <li>수의상환채권은 금리가 낮을 때 음의 볼록성을 보일 수 있다 → <b>O</b></li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs = {}, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.append(n); return n; }
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => span / k <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10)); return out;
+}
+const pathD = (xs, ys) => xs.map((x, i) => (i ? "L" : "M") + x.toFixed(1) + "," + ys[i].toFixed(1)).join("");
+/* opts: xs, series [{k,v,c,w,dash,area,hideLabel}], xFmt, yFmt, xTitle, height, yDomain, refs [{y,c,label}], tipTitle(i), extraRows(i) */
+function lineChart(box, o) {
+  box.replaceChildren();
+  const W = Math.max(box.clientWidth, 280), H = o.height || 280, M = { l: 40, r: o.mr ?? (W < 500 ? 78 : 104), t: 10, b: 34 };
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}` }); box.append(svg);
+  const all = o.series.flatMap(sr => sr.v).concat((o.refs || []).map(r => r.y));
+  let [lo, hi] = o.yDomain || [Math.min(...all), Math.max(...all)];
+  if (!o.yDomain) { const pad = (hi - lo) * 0.08 || 5; lo -= pad; hi += pad; }
+  const x0 = o.xs[0], x1 = o.xs.at(-1);
+  const x = v => M.l + (v - x0) / (x1 - x0) * (W - M.l - M.r), y = v => H - M.b - (v - lo) / (hi - lo) * (H - M.t - M.b);
+  for (const v of niceTicks(lo, hi)) {
+    s("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), style: "stroke:var(--grid)" }, svg);
+    s("text", { x: M.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = o.yFmt(v);
+  }
+  if (lo < 0 && hi > 0 && o.zero) s("line", { x1: M.l, x2: W - M.r, y1: y(0), y2: y(0), style: "stroke:var(--muted)", "stroke-width": 1 }, svg);
+  for (const v of niceTicks(x0, x1)) s("text", { x: x(v), y: H - M.b + 16, "text-anchor": "middle" }, svg).textContent = o.xFmt(v);
+  if (o.xTitle) s("text", { x: (M.l + W - M.r) / 2, y: H - 2, "text-anchor": "middle" }, svg).textContent = o.xTitle;
+  const xs = o.xs.map(x);
+  for (const r of o.refs || []) s("line", { x1: M.l, x2: W - M.r, y1: y(r.y), y2: y(r.y), style: `stroke:${r.c || "var(--ref)"}`, "stroke-dasharray": "5 4", "stroke-width": 1.5 }, svg);
+  for (const sr of o.series) {
+    if (sr.area) s("path", { d: pathD(xs, sr.v.map(y)) + `L${xs.at(-1)},${y(lo)}L${xs[0]},${y(lo)}Z`, style: `fill:${sr.area}` }, svg);
+    s("path", { d: pathD(xs, sr.v.map(y)), fill: "none", style: `stroke:${sr.c}`, "stroke-width": sr.w || 2, "stroke-linejoin": "round", ...(sr.dash ? { "stroke-dasharray": sr.dash } : {}) }, svg);
+  }
+  const ends = o.series.filter(sr => !sr.hideLabel).map(sr => ({ k: sr.k, y: y(sr.v.at(-1)), c: sr.c }))
+    .concat((o.refs || []).filter(r => r.label).map(r => ({ k: r.label, y: y(r.y), c: r.c || "var(--ref)" }))).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const e of ends) {
+    s("rect", { x: W - M.r + 6, y: e.y - 4, width: 8, height: 8, rx: 2, style: `fill:${e.c}` }, svg);
+    s("text", { x: W - M.r + 18, y: e.y + 4, class: "dl" }, svg).textContent = e.k;
+  }
+  for (const mk of o.marks || []) s("circle", { cx: x(mk.x), cy: y(mk.y), r: 6, fill: "none", style: `stroke:${mk.c}`, "stroke-width": 2 }, svg);
+  // hover
+  const g = s("g", { style: "pointer-events:none", visibility: "hidden" }, svg);
+  const vl = s("line", { y1: M.t, y2: H - M.b, style: "stroke:var(--muted)", "stroke-width": 1 }, g);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  const hit = s("rect", { x: M.l, y: M.t, width: W - M.l - M.r, height: H - M.t - M.b, fill: "transparent" }, svg);
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    let i = 0, best = 1e9; xs.forEach((xv, k) => { const d = Math.abs(xv - px); if (d < best) { best = d; i = k; } });
+    vl.setAttribute("x1", xs[i]); vl.setAttribute("x2", xs[i]);
+    g.querySelectorAll("circle").forEach(c => c.remove());
+    for (const sr of o.series) s("circle", { cx: xs[i], cy: y(sr.v[i]), r: 4.5, style: `fill:${sr.c};stroke:var(--surface)`, "stroke-width": 2 }, g);
+    g.setAttribute("visibility", "visible");
+    const rows = o.series.map(sr => ({ k: sr.k, v: (sr.fmt || o.yFmtTip || o.yFmt)(sr.v[i]), c: sr.c })).concat(o.extraRows ? o.extraRows(i) : []);
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${o.tipTitle(i)}</div>` +
+      rows.map(rw => `<div class="row"><span><span class="sw" style="background:${rw.c}"></span>${rw.k}</span><b>${rw.v}</b></div>`).join("");
+    tip.hidden = false;
+    const bw = box.clientWidth; tip.style.left = Math.min(Math.max(xs[i] * r.width / W + 12, 0), bw - tip.offsetWidth) + "px";
+    tip.style.top = Math.max((ev.clientY - r.top) - tip.offsetHeight - 8, 0) + "px";
+  };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { g.setAttribute("visibility", "hidden"); tip.hidden = true; });
+}
+const stat = (k, v, note) => `<div class="stat"><div class="k">${k}</div><b>${v}</b>${note ? `<div class="sub">${note}</div>` : ""}</div>`;
+
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+const sgn = (v, d = 2) => (v >= 0 ? "+" : "") + v.toFixed(d);
+const range = (a, b, st) => { const o = []; for (let v = a; v <= b + 1e-9; v += st) o.push(+v.toFixed(6)); return o; };
+
+// ---------- bond math (annual coupon, face 100) ----------
+function price(c, N, y) { let p = 0; for (let t = 1; t <= N; t++) p += c / Math.pow(1 + y, t); return p + 100 / Math.pow(1 + y, N); }
+function measures(fn, y) {
+  const h = 1e-4, p = fn(y), pu = fn(y + h), pd = fn(y - h);
+  const dmod = (pd - pu) / (2 * h * p), conv = (pu + pd - 2 * p) / (p * h * h);
+  return { p, dmod, mac: dmod * (1 + y), conv };
+}
+const bond = () => ({ N: +$("N").value, c: +$("C").value, y: +$("Y").value / 100 });
+
+function renderBond() {
+  const { N, c, y } = bond();
+  $("oN").textContent = N + "년"; $("oC").textContent = fmt(c) + "%"; $("oY").textContent = fmt(y * 100, 2) + "%";
+  const m = measures(v => price(c, N, v), y);
+  $("bondStats").innerHTML = stat("가격", fmt(m.p, 2)) + stat("맥컬리 듀레이션", fmt(m.mac, 2) + "년") +
+    stat("수정 듀레이션", fmt(m.dmod, 2)) + stat("볼록성", fmt(m.conv, 1));
+  return m;
+}
+
+// ---------- 1. price-yield ----------
+function renderPY(m) {
+  const { N, c, y } = bond(), d = +$("D").value / 100;
+  $("oD").textContent = sgn(d * 100, 2) + "%p";
+  const lo = Math.max(0, y * 100 - 4), xs = range(lo, y * 100 + 4, 0.1);
+  const act = xs.map(x => price(c, N, x / 100));
+  const dur = xs.map(x => m.p * (1 - m.dmod * (x / 100 - y)));
+  const cvx = xs.map(x => { const dy = x / 100 - y; return m.p * (1 - m.dmod * dy + 0.5 * m.conv * dy * dy); });
+  const y1 = y + d, pA = price(c, N, y1), pD = m.p * (1 - m.dmod * d), pC = m.p * (1 - m.dmod * d + 0.5 * m.conv * d * d);
+  lineChart($("pyChart"), {
+    xs, height: 300, xFmt: v => fmt(v, 0) + "%", yFmt: v => fmt(v, 0), yFmtTip: v => fmt(v, 2), xTitle: "만기수익률",
+    series: [{ k: "듀레이션 추정", v: dur, c: "var(--s2)", dash: "6 4" }, { k: "+볼록성 추정", v: cvx, c: "var(--s3)" }, { k: "실제 가격", v: act, c: "var(--s1)", w: 3 }],
+    marks: [{ x: y * 100, y: m.p, c: "var(--ink)" }, { x: y1 * 100, y: pA, c: "var(--s1)" }, { x: y1 * 100, y: pD, c: "var(--s2)" }],
+    tipTitle: i => `수익률 ${fmt(xs[i], 1)}%`
+  });
+  const pct = v => sgn((v / m.p - 1) * 100) + "%";
+  const durEff = -m.dmod * d * 100, cvEff = 0.5 * m.conv * d * d * 100, actPct = (pA / m.p - 1) * 100;
+  $("estTable").innerHTML = `<thead><tr><th>항목</th><th>계산</th><th>가격변화율</th></tr></thead><tbody>
+    <tr><td>듀레이션 효과</td><td>− ${fmt(m.dmod, 2)} × (${sgn(d * 100, 2)}%)</td><td>${sgn(durEff)}%</td></tr>
+    <tr><td>볼록성 효과</td><td>½ × ${fmt(m.conv, 1)} × (${sgn(d * 100, 2)}%)²</td><td>${sgn(cvEff)}%</td></tr>
+    <tr><td><b>듀레이션 + 볼록성 추정</b></td><td></td><td><b>${sgn(durEff + cvEff)}%</b></td></tr>
+    <tr><td><b>실제</b></td><td>가격 ${fmt(m.p, 2)} → ${fmt(pA, 2)}</td><td><b>${pct(pA)}</b></td></tr>
+    <tr><td>듀레이션만 썼을 때 오차</td><td></td><td>${sgn(durEff - actPct)}%p</td></tr>
+    <tr><td>볼록성까지 썼을 때 오차</td><td></td><td>${sgn(durEff + cvEff - actPct, 3)}%p</td></tr></tbody>`;
+  $("pyLesson").innerHTML = d > 0
+    ? `<b>금리 상승:</b> 듀레이션만 쓰면 가격이 ${fmt(-durEff)}% 떨어진다고 보지만 실제로는 ${fmt(-actPct)}%만 떨어집니다. 하락폭을 <b>과대평가</b>합니다. 차트에서 점선(접선)이 실제 곡선보다 항상 아래에 있는 것이 그 이유입니다.`
+    : d < 0
+    ? `<b>금리 하락:</b> 듀레이션만 쓰면 가격이 ${fmt(durEff)}% 오른다고 보지만 실제로는 ${fmt(actPct)}% 오릅니다. 상승폭을 <b>과소평가</b>합니다. 볼록성은 이 차이를 메워 줍니다.`
+    : "Δy를 움직여 보세요. 금리가 오르든 내리든 실제 가격은 접선(듀레이션 추정)보다 위에 있습니다.";
+}
+
+// ---------- 2. barbell vs bullet ----------
+function renderBB() {
+  const y = bond().y, ds = range(-3, 3, 0.1);
+  const bullet = v => 100 * Math.pow(1 + y, 10) / Math.pow(1 + v, 10);
+  const barbell = v => 50 * Math.pow(1 + y, 2) / Math.pow(1 + v, 2) + 50 * Math.pow(1 + y, 18) / Math.pow(1 + v, 18);
+  const mb = measures(bullet, y), mr = measures(barbell, y);
+  const chg = (fn, d) => (fn(y + d / 100) / 100 - 1) * 100;
+  const bb = ds.map(d => chg(barbell, d)), bu = ds.map(d => chg(bullet, d));
+  $("bbStats").innerHTML = stat("수정 듀레이션", fmt(mr.dmod, 2) + " / " + fmt(mb.dmod, 2), "바벨 / 불릿 (같음)") +
+    stat("볼록성", fmt(mr.conv, 0) + " / " + fmt(mb.conv, 0), "바벨 / 불릿") +
+    stat("금리 +2%p", sgn(chg(barbell, 2), 1) + " / " + sgn(chg(bullet, 2), 1) + "%", "바벨이 덜 잃음") +
+    stat("금리 −2%p", sgn(chg(barbell, -2), 1) + " / " + sgn(chg(bullet, -2), 1) + "%", "바벨이 더 범");
+  lineChart($("bbChart"), {
+    xs: ds, zero: true, height: 280, xFmt: v => sgn(v, 0) + "%p", yFmt: v => fmt(v, 0) + "%", yFmtTip: v => sgn(v) + "%", xTitle: "금리 변화 Δy",
+    series: [{ k: "불릿형", v: bu, c: "var(--s2)" }, { k: "바벨형", v: bb, c: "var(--s1)", w: 3 }],
+    tipTitle: i => `금리 ${sgn(ds[i], 1)}%p`
+  });
+  lineChart($("bbDiff"), {
+    xs: ds, height: 180, xFmt: v => sgn(v, 0) + "%p", yFmt: v => fmt(v, 1) + "%p", yFmtTip: v => sgn(v) + "%p", xTitle: "금리 변화 Δy",
+    series: [{ k: "바벨 − 불릿", v: ds.map((_, i) => bb[i] - bu[i]), c: "var(--s1)", area: "var(--s1-soft)", hideLabel: true }],
+    mr: 16, tipTitle: i => `금리 ${sgn(ds[i], 1)}%p`
+  });
+}
+
+// ---------- 3. determinants ----------
+function renderDet() {
+  const { N, c, y } = bond();
+  const conv = (cc, nn, yy) => measures(v => price(cc, nn, v), yy).conv;
+  const mini = (id, xs, f, cur, xFmt, title) => lineChart($(id), {
+    xs, height: 180, mr: 16, xFmt, yFmt: v => fmt(v, 0), yFmtTip: v => fmt(v, 1),
+    series: [{ k: "볼록성", v: xs.map(f), c: "var(--s1)", w: 2.5, hideLabel: true }],
+    marks: [{ x: cur, y: f(cur), c: "var(--s2)" }], tipTitle: i => title(xs[i])
+  });
+  mini("detN", range(1, 30, 1), n => conv(c, n, y), N, v => v + "년", v => `만기 ${v}년`);
+  mini("detC", range(0, 10, 0.5), cc => conv(cc, N, y), c, v => v + "%", v => `표면이자율 ${fmt(v)}%`);
+  mini("detY", range(1, 10, 0.25), yy => conv(c, N, yy / 100), y * 100, v => v + "%", v => `수익률 ${fmt(v, 2)}%`);
+}
+
+// ---------- 4. callable ----------
+function renderCall() {
+  const xs = range(1, 10, 0.1), k = 1.5, cp = 105;
+  const plain = xs.map(x => price(6, 10, x / 100));
+  const call = plain.map(p => -k * Math.log(Math.exp(-p / k) + Math.exp(-cp / k)));
+  lineChart($("callChart"), {
+    xs, height: 280, xFmt: v => v + "%", yFmt: v => fmt(v, 0), yFmtTip: v => fmt(v, 2), xTitle: "만기수익률 (10년, 표면이자 6%)",
+    series: [{ k: "일반채권", v: plain, c: "var(--s2)" }, { k: "수의상환채권", v: call, c: "var(--s1)", w: 3 }],
+    refs: [{ y: cp, label: "상환가격" }], tipTitle: i => `수익률 ${fmt(xs[i], 1)}%`
+  });
+}
+
+function render() { const m = renderBond(); renderPY(m); renderBB(); renderDet(); renderCall(); }
+["N", "C", "Y", "D"].forEach(id => $(id).addEventListener("input", render));
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(render, 80); }).observe(document.querySelector(".wrap"));
+render();
+</script>
+</body>
+</html>

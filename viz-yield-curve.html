@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>수익률곡선 나비형 변화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8; --grid:#E8ECF1;
+  --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --ref:#6B7385; --s1-soft:rgba(42,120,214,.16); --s3-soft:rgba(27,175,122,.18);
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+    --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240; --grid:#232B37;
+  --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --ref:#8C95A6; --s1-soft:rgba(57,135,229,.22); --s3-soft:rgba(25,158,112,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:900px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:22px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-size:18px;font-weight:600;margin:0}
+h3{font-size:15.5px;font-weight:600;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:64ch}
+a{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.sub{color:var(--muted);font-size:13.5px;margin:0}
+.formula{font-family:var(--mono);font-size:14.5px;background:var(--chip);border-radius:8px;padding:10px 12px;overflow-wrap:anywhere}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ctl{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.ctl output{font:500 14px var(--mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:10px 12px;font:500 14.5px var(--body);color:var(--muted);cursor:pointer;margin-bottom:-1px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:500 13.5px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink);border-color:var(--accent)}
+.lesson{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14.5px}
+.warn{background:var(--accent-soft);border-left:3px solid var(--bad);padding:8px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .k{font-size:12.5px;color:var(--muted)}
+.stat b{display:block;font:500 21px var(--mono);font-variant-numeric:tabular-nums}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pc ul{margin:4px 0 0;padding-left:18px;font-size:14px}
+.pc .box{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none}
+.stack{display:flex;gap:2px;height:30px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg{display:flex;align-items:center;justify-content:center;font:500 12px var(--mono);white-space:nowrap;overflow:hidden;transition:flex-basis .25s}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.chart .dl{font-size:12px;font-weight:600;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:160px;z-index:2}
+.tip .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tip b{font:500 12.5px var(--mono)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;font-size:13.5px;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;background:var(--chip)}
+.ox li{margin:4px 0}
+@media (max-width:640px){.controls{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pc{grid-template-columns:1fr}}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid3 h3{font-size:14px;margin:0 0 4px}
+@media (max-width:760px){.grid3{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.grid3{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="label">투자자산운용사 · 채권투자운용</div>
+    <h1>수익률곡선: 나비형 변화</h1>
+    <p class="lede">수익률곡선의 <b>가운데(중기)</b>와 <b>양 끝(단기·장기)</b>이 반대로 움직이는 것이 나비형(butterfly) 변화입니다. 중기 금리가 상대적으로 오르면 <b>Hump형</b>, 내리면 <b>Trough형</b>이 됩니다. 이 변화에 따라 바벨형과 불릿형 중 누가 이기는지까지 직접 확인해 보세요. <a href="invest.html">← 노트로</a> · <a href="viz-convexity.html">볼록성 시각화 →</a></p>
+  </header>
+
+  <section class="card" aria-labelledby="h1">
+    <h2 id="h1">1. 수익률곡선의 기본 형태</h2>
+    <div class="grid3" id="shapes"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h2">
+    <h2 id="h2">2. 나비형 변화 만들어 보기</h2>
+    <div class="chips" id="presets"></div>
+    <div class="controls">
+      <label class="ctl">곡률 변화 (중기 vs 단·장기) <output id="oK"></output><input type="range" id="K" min="-100" max="100" step="5" value="60"></label>
+      <label class="ctl">평행이동 (전 구간 동일) <output id="oP"></output><input type="range" id="P" min="-100" max="100" step="5" value="0"></label>
+      <div class="ctl"><span>지금 모양</span><output id="oShape"></output></div>
+    </div>
+    <div class="legend">
+      <span><i style="border-color:var(--ref);border-top-style:dashed"></i>변화 전</span>
+      <span><i style="border-color:var(--s1);border-top-width:3px"></i>변화 후</span>
+    </div>
+    <div class="chart" id="curve"></div>
+    <h3>만기별 금리 변화 (bp)</h3>
+    <div class="chart" id="delta"></div>
+    <p class="sub">위로 올라간 구간은 금리 상승(가격 하락), 아래로 내려간 구간은 금리 하락(가격 상승)입니다. 나비형 변화에서는 가운데와 양 끝이 반대 방향입니다.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h3">
+    <h2 id="h3">3. 그래서 누가 이길까? 바벨형 vs 불릿형</h2>
+    <p class="sub"><b>불릿형</b>은 5년물에 집중하고, <b>바벨형</b>은 2년물 62.5%와 10년물 37.5%로 양 끝에 나눠 담았습니다. 듀레이션(약 5년)을 맞췄으니 <b>평행이동에는 거의 똑같이</b> 반응하고, 곡률이 바뀔 때 차이가 납니다. 위 슬라이더를 그대로 따릅니다.</p>
+    <div class="stats" id="pnl"></div>
+    <div class="lesson" id="pnlLesson"></div>
+    <h3>곡률 변화에 따른 수익률 차이 (바벨형 − 불릿형)</h3>
+    <div class="chart" id="pnlChart"></div>
+    <p class="sub">가로축 오른쪽(중기 금리 상대 상승 = Hump형)으로 갈수록 바벨형이, 왼쪽(Trough형)으로 갈수록 불릿형이 유리합니다. 곡률 변화가 0이어도 차이가 0보다 조금 큰 것은 바벨형의 <b>볼록성</b>이 더 크기 때문입니다 (평행이동 슬라이더를 크게 움직여 보세요).</p>
+  </section>
+
+  <section class="card" aria-labelledby="h4">
+    <h2 id="h4">4. 시험용 정리</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>예상</th><th>곡선 변화</th><th>유리한 전략</th><th>이유</th></tr></thead>
+      <tbody>
+        <tr><td>중기 금리가 상대적으로 <b>상승</b></td><td><b>Hump형</b> (가운데가 볼록)</td><td><b>바벨형</b> (단기 + 장기)</td><td>가격이 떨어지는 중기물을 피함</td></tr>
+        <tr><td>중기 금리가 상대적으로 <b>하락</b></td><td><b>Trough형</b> (가운데가 오목)</td><td><b>불릿형</b> (중기 집중)</td><td>가격이 오르는 중기물에 집중</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tbl"><table>
+      <thead><tr><th>수익률곡선 변화 유형</th><th>내용</th></tr></thead>
+      <tbody>
+        <tr><td>평행이동</td><td>모든 만기 금리가 같은 폭으로 이동 → 듀레이션이 같으면 결과도 비슷</td></tr>
+        <tr><td>비틀림 (twist)</td><td>기울기 변화: <b>스티프닝</b>(장단기 금리차 확대), <b>플래트닝</b>(축소)</td></tr>
+        <tr><td>나비형 (butterfly)</td><td><b>곡률</b> 변화: 중기와 단·장기가 반대로 움직임 → Hump형 / Trough형</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sub">⚠️ "양(+)의 나비형 / 음(−)의 나비형"은 교재마다 정의가 반대로 쓰이기도 합니다. 시험에서는 기본서의 정의 문장을 그대로 확인하고, 헷갈리면 <b>"중기 금리가 어느 쪽으로 움직였나"</b>로 판단하세요.</p>
+    <ul class="ox">
+      <li>중기 금리가 상대적으로 상승할 것으로 예상되면 바벨형 포트폴리오가 유리하다 → <b>O</b></li>
+      <li>Trough형 변화가 예상되면 바벨형 포트폴리오를 구성한다 → <b>X</b> (불릿형)</li>
+      <li>나비형 이동은 수익률곡선의 기울기가 아니라 곡률이 변하는 것이다 → <b>O</b></li>
+      <li>듀레이션이 같은 바벨형과 불릿형은 평행이동 시에도 성과가 크게 다르다 → <b>X</b> (볼록성 차이만큼만 다름)</li>
+      <li>같은 듀레이션이면 바벨형의 볼록성이 불릿형보다 크다 → <b>O</b></li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const NS = "http://www.w3.org/2000/svg";
+function s(tag, attrs = {}, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.append(n); return n; }
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo || 1, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(k => k * mag).find(k => span / k <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10)); return out;
+}
+const pathD = (xs, ys) => xs.map((x, i) => (i ? "L" : "M") + x.toFixed(1) + "," + ys[i].toFixed(1)).join("");
+/* opts: xs, series [{k,v,c,w,dash,area,hideLabel}], xFmt, yFmt, xTitle, height, yDomain, refs [{y,c,label}], tipTitle(i), extraRows(i) */
+function lineChart(box, o) {
+  box.replaceChildren();
+  const W = Math.max(box.clientWidth, 280), H = o.height || 280, M = { l: 40, r: o.mr ?? (W < 500 ? 78 : 104), t: 10, b: 34 };
+  const svg = s("svg", { viewBox: `0 0 ${W} ${H}` }); box.append(svg);
+  const all = o.series.flatMap(sr => sr.v).concat((o.refs || []).map(r => r.y));
+  let [lo, hi] = o.yDomain || [Math.min(...all), Math.max(...all)];
+  if (!o.yDomain) { const pad = (hi - lo) * 0.08 || 5; lo -= pad; hi += pad; }
+  const x0 = o.xs[0], x1 = o.xs.at(-1);
+  const x = v => M.l + (v - x0) / (x1 - x0) * (W - M.l - M.r), y = v => H - M.b - (v - lo) / (hi - lo) * (H - M.t - M.b);
+  for (const v of niceTicks(lo, hi)) {
+    s("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), style: "stroke:var(--grid)" }, svg);
+    s("text", { x: M.l - 6, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = o.yFmt(v);
+  }
+  if (lo < 0 && hi > 0 && o.zero) s("line", { x1: M.l, x2: W - M.r, y1: y(0), y2: y(0), style: "stroke:var(--muted)", "stroke-width": 1 }, svg);
+  for (const v of niceTicks(x0, x1)) s("text", { x: x(v), y: H - M.b + 16, "text-anchor": "middle" }, svg).textContent = o.xFmt(v);
+  if (o.xTitle) s("text", { x: (M.l + W - M.r) / 2, y: H - 2, "text-anchor": "middle" }, svg).textContent = o.xTitle;
+  const xs = o.xs.map(x);
+  for (const r of o.refs || []) s("line", { x1: M.l, x2: W - M.r, y1: y(r.y), y2: y(r.y), style: `stroke:${r.c || "var(--ref)"}`, "stroke-dasharray": "5 4", "stroke-width": 1.5 }, svg);
+  for (const sr of o.series) {
+    if (sr.area) s("path", { d: pathD(xs, sr.v.map(y)) + `L${xs.at(-1)},${y(lo)}L${xs[0]},${y(lo)}Z`, style: `fill:${sr.area}` }, svg);
+    s("path", { d: pathD(xs, sr.v.map(y)), fill: "none", style: `stroke:${sr.c}`, "stroke-width": sr.w || 2, "stroke-linejoin": "round", ...(sr.dash ? { "stroke-dasharray": sr.dash } : {}) }, svg);
+  }
+  const ends = o.series.filter(sr => !sr.hideLabel).map(sr => ({ k: sr.k, y: y(sr.v.at(-1)), c: sr.c }))
+    .concat((o.refs || []).filter(r => r.label).map(r => ({ k: r.label, y: y(r.y), c: r.c || "var(--ref)" }))).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const e of ends) {
+    s("rect", { x: W - M.r + 6, y: e.y - 4, width: 8, height: 8, rx: 2, style: `fill:${e.c}` }, svg);
+    s("text", { x: W - M.r + 18, y: e.y + 4, class: "dl" }, svg).textContent = e.k;
+  }
+  for (const mk of o.marks || []) s("circle", { cx: x(mk.x), cy: y(mk.y), r: 6, fill: "none", style: `stroke:${mk.c}`, "stroke-width": 2 }, svg);
+  // hover
+  const g = s("g", { style: "pointer-events:none", visibility: "hidden" }, svg);
+  const vl = s("line", { y1: M.t, y2: H - M.b, style: "stroke:var(--muted)", "stroke-width": 1 }, g);
+  const tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip);
+  const hit = s("rect", { x: M.l, y: M.t, width: W - M.l - M.r, height: H - M.t - M.b, fill: "transparent" }, svg);
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * W / r.width;
+    let i = 0, best = 1e9; xs.forEach((xv, k) => { const d = Math.abs(xv - px); if (d < best) { best = d; i = k; } });
+    vl.setAttribute("x1", xs[i]); vl.setAttribute("x2", xs[i]);
+    g.querySelectorAll("circle").forEach(c => c.remove());
+    for (const sr of o.series) s("circle", { cx: xs[i], cy: y(sr.v[i]), r: 4.5, style: `fill:${sr.c};stroke:var(--surface)`, "stroke-width": 2 }, g);
+    g.setAttribute("visibility", "visible");
+    const rows = o.series.map(sr => ({ k: sr.k, v: (sr.fmt || o.yFmtTip || o.yFmt)(sr.v[i]), c: sr.c })).concat(o.extraRows ? o.extraRows(i) : []);
+    tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${o.tipTitle(i)}</div>` +
+      rows.map(rw => `<div class="row"><span><span class="sw" style="background:${rw.c}"></span>${rw.k}</span><b>${rw.v}</b></div>`).join("");
+    tip.hidden = false;
+    const bw = box.clientWidth; tip.style.left = Math.min(Math.max(xs[i] * r.width / W + 12, 0), bw - tip.offsetWidth) + "px";
+    tip.style.top = Math.max((ev.clientY - r.top) - tip.offsetHeight - 8, 0) + "px";
+  };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { g.setAttribute("visibility", "hidden"); tip.hidden = true; });
+}
+const stat = (k, v, note) => `<div class="stat"><div class="k">${k}</div><b>${v}</b>${note ? `<div class="sub">${note}</div>` : ""}</div>`;
+
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1) => v.toFixed(d);
+const sgn = (v, d = 2) => (v >= 0 ? "+" : "") + v.toFixed(d);
+const MAT = [0.25, 1, 2, 3, 5, 7, 10, 15, 20, 30];
+const LBL = ["3M", "1Y", "2Y", "3Y", "5Y", "7Y", "10Y", "15Y", "20Y", "30Y"];
+const IDX = MAT.map((_, i) => i);
+const xLbl = v => LBL[Math.round(v)] ?? "";
+const base = T => 2.5 + 1.8 * (1 - Math.exp(-T / 4));               // normal upward curve, %
+const bump = T => Math.exp(-Math.pow(Math.log(T / 5), 2) / (2 * 0.45 * 0.45)); // 1 at 5Y, falls off toward 2Y and 10Y
+const shiftBp = (T, k, p) => k * (2 * bump(T) - 1) + p;               // butterfly + parallel, in bp
+
+// ---------- 1. shapes ----------
+function renderShapes() {
+  const shapes = [
+    ["상승형 (정상)", T => 2 + 2 * (1 - Math.exp(-T / 5)), "장기 금리 > 단기. 가장 흔한 모양"],
+    ["하강형 (역전)", T => 4.5 - 1.8 * (1 - Math.exp(-T / 5)), "단기 금리 > 장기. 경기 침체 신호로 해석"],
+    ["수평형", T => 3.5 + 0 * T, "만기와 관계없이 비슷"],
+    ["Hump형 (낙타등형)", T => 3 + 1.6 * bump(T), "중기 금리가 가장 높음"],
+    ["Trough형 (U자형)", T => 4.2 - 1.4 * bump(T), "중기 금리가 가장 낮음"]
+  ];
+  const box = $("shapes"); box.replaceChildren();
+  for (const [name, f, note] of shapes) {
+    const cell = document.createElement("div");
+    cell.innerHTML = `<h3>${name}</h3><div class="chart"></div><p class="sub">${note}</p>`;
+    box.append(cell);
+    lineChart(cell.querySelector(".chart"), {
+      xs: IDX, height: 150, mr: 12, yDomain: [1.5, 5], xFmt: xLbl, yFmt: v => v + "%", yFmtTip: v => fmt(v, 2) + "%",
+      series: [{ k: "금리", v: MAT.map(f), c: "var(--s1)", w: 2.5, hideLabel: true }], tipTitle: i => `만기 ${LBL[i]}`
+    });
+  }
+}
+
+// ---------- 2. butterfly ----------
+let K = 60, P0 = 0;
+function shapeName(k) { return k > 0 ? "Hump형으로 변화 (중기 ↑, 단·장기 ↓)" : k < 0 ? "Trough형으로 변화 (중기 ↓, 단·장기 ↑)" : "곡률 변화 없음"; }
+function renderCurve() {
+  $("oK").textContent = sgn(K, 0) + "bp"; $("oP").textContent = sgn(P0, 0) + "bp"; $("oShape").textContent = shapeName(K);
+  const before = MAT.map(base), after = MAT.map(T => base(T) + shiftBp(T, K, P0) / 100);
+  lineChart($("curve"), {
+    xs: IDX, height: 280, xFmt: xLbl, yFmt: v => fmt(v, 1) + "%", yFmtTip: v => fmt(v, 2) + "%", xTitle: "만기",
+    series: [{ k: "변화 전", v: before, c: "var(--ref)", dash: "5 4", w: 1.75 }, { k: "변화 후", v: after, c: "var(--s1)", w: 3 }],
+    tipTitle: i => `만기 ${LBL[i]}`, extraRows: i => [{ k: "변화", v: sgn(shiftBp(MAT[i], K, P0), 0) + "bp", c: "transparent" }]
+  });
+  lineChart($("delta"), {
+    xs: IDX, height: 190, mr: 16, zero: true, yDomain: [-210, 210], xFmt: xLbl, yFmt: v => fmt(v, 0), yFmtTip: v => sgn(v, 0) + "bp", xTitle: "만기",
+    series: [{ k: "금리 변화", v: MAT.map(T => shiftBp(T, K, P0)), c: "var(--s1)", area: "var(--s1-soft)", hideLabel: true }],
+    tipTitle: i => `만기 ${LBL[i]}`
+  });
+}
+
+// ---------- 3. barbell vs bullet ----------
+const W2 = 0.625, W10 = 0.375; // value weights → duration ≈ 5y
+function ret(T, k, p) { const y0 = base(T) / 100, y1 = y0 + shiftBp(T, k, p) / 10000; return (Math.pow(1 + y0, T) / Math.pow(1 + y1, T) - 1) * 100; }
+const bullet = (k, p) => ret(5, k, p);
+const barbell = (k, p) => W2 * ret(2, k, p) + W10 * ret(10, k, p);
+function renderPnl() {
+  const bb = barbell(K, P0), bu = bullet(K, P0), diff = bb - bu;
+  const b2 = shiftBp(2, K, P0), b5 = shiftBp(5, K, P0), b10 = shiftBp(10, K, P0);
+  $("pnl").innerHTML = stat("금리 변화 2Y / 5Y / 10Y", `${sgn(b2, 0)} / ${sgn(b5, 0)} / ${sgn(b10, 0)}`, "bp") +
+    stat("바벨형 수익률", sgn(bb) + "%") + stat("불릿형 수익률", sgn(bu) + "%") +
+    stat("차이 (바벨 − 불릿)", sgn(diff) + "%p", Math.abs(diff) < 0.02 ? "거의 같음" : diff > 0 ? "바벨형 승" : "불릿형 승");
+  $("pnlLesson").innerHTML = K > 0
+    ? `<b>Hump형:</b> 5년물 금리가 ${sgn(b5, 0)}bp 움직여 불릿형이 손해를 봅니다. 바벨형은 2년·10년물 금리가 ${b2 < b5 ? "덜 오르거나 내려서" : "상대적으로 유리하게 움직여"} <b>바벨형이 이깁니다.</b>`
+    : K < 0
+    ? `<b>Trough형:</b> 5년물 금리가 상대적으로 내려 중기물에 집중한 <b>불릿형이 이깁니다.</b> 양 끝 금리는 상대적으로 올라 바벨형이 불리합니다.`
+    : `<b>평행이동만:</b> 듀레이션이 같아서 차이가 작습니다. 그래도 바벨형이 조금 나은 것은 <b>볼록성</b>이 더 크기 때문입니다.`;
+  const ks = []; for (let k = -100; k <= 100; k += 5) ks.push(k);
+  lineChart($("pnlChart"), {
+    xs: ks, height: 230, mr: 16, zero: true, xFmt: v => sgn(v, 0), yFmt: v => fmt(v, 1), yFmtTip: v => sgn(v) + "%p", xTitle: "곡률 변화 (bp) · 왼쪽 Trough형 ← → 오른쪽 Hump형",
+    series: [{ k: "바벨 − 불릿", v: ks.map(k => barbell(k, P0) - bullet(k, P0)), c: "var(--s1)", w: 2.5, hideLabel: true }],
+    marks: [{ x: K, y: diff, c: "var(--s2)" }],
+    tipTitle: i => `곡률 변화 ${sgn(ks[i], 0)}bp`
+  });
+}
+
+function renderPresets() {
+  const box = $("presets"); box.replaceChildren();
+  const ps = [["Hump형 (중기 금리 상승)", 60, 0], ["Trough형 (중기 금리 하락)", -60, 0], ["평행이동만 (+100bp)", 0, 100]];
+  for (const [name, k, p] of ps) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = name;
+    b.setAttribute("aria-pressed", String(K === k && P0 === p));
+    b.onclick = () => { K = k; P0 = p; $("K").value = k; $("P").value = p; render(); };
+    box.append(b);
+  }
+}
+function render() { renderPresets(); renderCurve(); renderPnl(); }
+$("K").addEventListener("input", e => { K = +e.target.value; render(); });
+$("P").addEventListener("input", e => { P0 = +e.target.value; render(); });
+let rt; new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { renderShapes(); render(); }, 80); }).observe(document.querySelector(".wrap"));
+renderShapes(); render();
+</script>
+</body>
+</html>

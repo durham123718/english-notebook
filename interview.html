@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinqAlpha 실무진 면접</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8;
+  --bad:#BF3328; --good:#1D6B58; --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4;
+  --display:"Noto Serif KR", Georgia, serif;
+  --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
+    --bad:#F07A6E; --good:#5CC6A6; --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
+  --bad:#F07A6E; --good:#5CC6A6; --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;word-break:keep-all}
+.wrap{max-width:860px;margin:0 auto;padding:32px 16px 80px;display:grid;gap:20px}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(26px,5vw,36px);line-height:1.2;margin:0}
+h2{font-family:var(--display);font-weight:600;font-size:clamp(19px,3.6vw,23px);line-height:1.3;margin:0}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);margin:8px 0 0;max-width:62ch}
+a{color:var(--accent)}
+.note{background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:14px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input,textarea,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%}
+textarea{min-height:240px;resize:vertical;font-family:var(--mono);font-size:13.5px;line-height:1.6}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 14px var(--body);padding:8px 14px;border-radius:7px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* stages */
+.stages{display:flex;flex-wrap:wrap;gap:6px;font-family:var(--mono);font-size:11.5px;margin-top:14px}
+.stage{padding:5px 10px;border-radius:5px;background:var(--chip);color:var(--muted)}
+.stage.done{color:var(--good);background:var(--accent-soft)}
+.stage.now{background:var(--accent);color:var(--surface);font-weight:500}
+
+/* sections */
+section{display:grid;gap:12px}
+.sec-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sec-num{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.sec-note{color:var(--muted);margin:0;max-width:64ch}
+
+/* facts */
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:13px 15px;min-width:0}
+.fact dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.fact dd{margin:0;font-size:14px;font-weight:500;line-height:1.45}
+.fact dd span{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:3px}
+
+/* question cards */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;display:grid;gap:11px;min-width:0}
+.q-tag{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.q-id{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--surface);background:var(--accent);padding:2px 7px;border-radius:4px}
+.tag{font-family:var(--mono);font-size:11px;background:var(--chip);padding:2px 8px;border-radius:4px;color:var(--muted)}
+.tag.hot{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.q-text{font-weight:600;font-size:16.5px;line-height:1.4;margin:0}
+.chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:11.5px}
+.step{padding:4px 9px;border-radius:5px;background:var(--chip);color:var(--muted)}
+.arrow{color:var(--muted)}
+.answer{background:var(--bg);border-radius:8px;padding:13px 14px;font-size:14.5px;display:grid;gap:9px}
+.answer .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.answer p{margin:0}
+.answer strong{color:var(--accent)}
+.mini{display:grid;gap:6px}
+.mini h4{margin:0;font-size:13.5px;font-weight:600}
+ul.tight{margin:0;padding-left:19px}
+ul.tight li{margin-bottom:4px}
+
+/* table */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;font-size:13.5px;min-width:520px;width:100%}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--chip);font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:grid;gap:8px;min-width:0}
+.card h4{margin:0;font-size:14.5px;font-weight:600}
+.card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)}
+.card ul li{margin-bottom:4px}
+.card p{margin:0;font-size:13.5px;color:var(--muted)}
+
+/* callout */
+.callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:14px 16px;display:grid;gap:6px}
+.callout.warn{border-left-color:var(--bad)}
+.callout .ctitle{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.callout.warn .ctitle{color:var(--bad)}
+.callout p{margin:0}
+
+/* pitch */
+.pitch{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:18px;display:grid;gap:9px}
+.pitch blockquote{margin:0;font-family:var(--display);font-size:clamp(16px,3.2vw,19px);line-height:1.5}
+
+/* checklist */
+.task{display:flex;gap:11px;padding:10px 0;border-top:1px solid var(--line);align-items:flex-start}
+.task:first-of-type{border-top:0}
+.task input{width:16px;height:16px;margin:3px 0 0;accent-color:var(--accent);flex:none;cursor:pointer;padding:0}
+.task label{cursor:pointer;min-width:0;display:grid;gap:2px}
+.task .t-name{font-weight:500;font-size:14.5px;line-height:1.4}
+.task .t-why{font-size:12.5px;color:var(--muted)}
+.task .t-time{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto;flex:none;padding-left:8px}
+.task input:checked + label .t-name{color:var(--muted);text-decoration:line-through}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar{flex:1;height:5px;background:var(--chip);border-radius:3px;overflow:hidden;min-width:0}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:3px;transition:width .25s ease}
+.bar-num{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* memo */
+.memo-bar{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.memo-bar h4{margin:0;font-size:14px;font-weight:600}
+#saveState{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto;white-space:nowrap}
+#saveState.ok{color:var(--good)}
+#saveState.err{color:var(--bad)}
+
+/* study mode */
+.study{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--muted);margin-top:12px}
+.study input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;padding:0}
+body.hide-answers .answer{filter:blur(5px);user-select:none}
+body.hide-answers .answer:hover,body.hide-answers .answer:focus-within{filter:none;user-select:auto}
+
+footer{color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:600px){.row3{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="label">Interview prep · GitHub sync</div>
+    <h1>LinqAlpha 실무진 면접</h1>
+    <p class="lede">BD Manager 인턴 · 서울 서초. 심사 기준은 하나 — <strong>"이 사람이 당장 우리 일을 할 수 있나."</strong> 메모와 체크리스트는 GitHub 비공개 저장소에 저장돼서 기기 간에 유지됩니다. <a href="./">영어 노트로 →</a> · <a href="invest.html">투자자산운용사 노트 →</a></p>
+    <div class="stages">
+      <span class="stage done">서류 ✓</span>
+      <span class="stage now">실무진 면접</span>
+      <span class="stage">컬쳐핏 면접</span>
+      <span class="stage">처우 협의</span>
+    </div>
+    <div class="study">
+      <input type="checkbox" id="studyMode">
+      <label for="studyMode">셀프 테스트 모드 — 모범답안 가리기 (마우스 올리면 보임)</label>
+    </div>
+  </header>
+
+  <div id="notice" class="note" hidden></div>
+
+  <div class="filters">
+    <button class="btn" id="refreshBtn" type="button">새로고침</button>
+    <button class="btn" id="exportBtn" type="button">백업 내보내기</button>
+    <button class="btn" id="settingsBtn" type="button">설정</button>
+  </div>
+
+  <form id="settingsForm" class="panel" hidden>
+    <div class="label">GitHub 연결 (이 브라우저에만 저장, 영어 노트와 공유)</div>
+    <div class="row3">
+      <label class="f">GitHub 사용자명<input id="sOwner" autocomplete="off"></label>
+      <label class="f">저장소<input id="sRepo" placeholder="english-notebook-data" autocomplete="off"></label>
+      <label class="f">파일<input id="sFile" placeholder="interview-notes.json" autocomplete="off"></label>
+    </div>
+    <label class="f">Access token (fine-grained, Contents: read and write)<input id="sToken" type="password" autocomplete="off"></label>
+    <div><button class="btn primary" type="submit">저장하고 연결</button></div>
+  </form>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">00</span><h2>회사 팩트 — 30초 암기</h2></div>
+    <p class="sec-note">면접관은 "알아보고 왔나"를 첫 3분에 판단합니다. 이름과 숫자는 바로 나와야 합니다.</p>
+    <dl class="facts">
+      <div class="fact"><dt>창업자</dt><dd>Jacob Choi · Hojun Choi<span>공동대표. MIT EECS 박사 + 전 Goldman Sachs / Macquarie AM. 공동창업자 4인</span></dd></div>
+      <div class="fact"><dt>시리즈 A</dt><dd>$22M (2026.07)<span>AVP · Atinum · GFT Ventures 주도. 누적 약 $28.6M</span></dd></div>
+      <div class="fact"><dt>고객</dt><dd>금융기관 70곳+<span>북미·유럽·아시아 기관투자자 (회사 자체 발표)</span></dd></div>
+      <div class="fact"><dt>포지셔닝</dt><dd>Alpha Intelligence Layer<span>공개시장용 멀티에이전트 AI 리서치 플랫폼</span></dd></div>
+      <div class="fact"><dt>거점</dt><dd>뉴욕 본사<span>보스턴에서 시작, 서울 오피스. 런던·싱가포르·홍콩 확장</span></dd></div>
+      <div class="fact"><dt>차별 포인트</dt><dd>LinqAlpha AI Lab<span>"AI 판단을 언제 신뢰할 수 있나" 연구 조직. 2026 Hedge Fund Services Awards Best AI Solution</span></dd></div>
+    </dl>
+    <div class="callout">
+      <span class="ctitle">이렇게 써라</span>
+      <p>세 개만 자연스럽게 흘리면 충분합니다 — <strong>MIT 박사 + 골드만 조합</strong>, <strong>시리즈 A 후 주식에서 매크로·크레딧·멀티애셋으로 확장 중</strong>, <strong>AI Lab에서 신뢰성을 연구한다는 점</strong>.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>제품을 직접 써봐라</h2></div>
+    <p class="sec-note">주요 업무에 <strong>"플랫폼 품질 관리(QA) 및 개선점 도출"</strong>이 명시돼 있습니다. 이미 그 일을 해본 지원자가 되면 경쟁이 끝납니다. 다른 모든 준비보다 먼저.</p>
+    <div class="callout">
+      <span class="ctitle">실행 경로</span>
+      <p>① 홈페이지 <strong>Book a demo</strong> 신청 — 지원자 신분을 밝히면 보여주는 경우가 많습니다. ② 막히면 데모 영상·링크드인 스크린샷·리뷰 사이트. ③ 그래도 안 되면 <strong>AlphaSense 무료 체험</strong>으로 간접 비교 — "경쟁사는 써봤다"도 강력한 카드입니다.</p>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>관찰 항목</th><th>기록할 것</th><th>면접에서 쓰는 방식</th></tr></thead>
+        <tbody>
+          <tr><td>질문 품질</td><td>던진 질문과 답의 쓸모</td><td>"이런 질문엔 강했고 이런 질문엔 약했습니다"</td></tr>
+          <tr><td>출처 추적</td><td>숫자 클릭 시 원문으로 가는가</td><td>애널리스트 신뢰의 핵심 → 개선안 소재</td></tr>
+          <tr><td>아시아 데이터</td><td>DART·TDnet 공시 커버리지</td><td>서울 오피스·아시아 확장과 직결</td></tr>
+          <tr><td>속도 / UI</td><td>느린 구간, 헷갈린 메뉴</td><td>구체적 QA 피드백</td></tr>
+          <tr><td>내가 애널리스트라면</td><td>가장 아쉬웠던 한 가지</td><td>개선안 본편</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>핵심 질문 8개</h2></div>
+    <p class="sec-note">구조만 외우고 말은 현장에서 만듭니다. 암기한 티가 나면 감점입니다.</p>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q1</span><span class="tag">제품 이해</span><span class="tag hot">거의 확실히 나옴</span></div>
+      <p class="q-text">LinqAlpha가 어떤 문제를 푸는지 설명해보세요.</p>
+      <div class="chain"><span class="step">고객의 Pain</span><span class="arrow">→</span><span class="step">기존 해법의 한계</span><span class="arrow">→</span><span class="step">LinqAlpha의 해법</span><span class="arrow">→</span><span class="step">왜 지금</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">모범답안</span>
+        <p>"바이사이드 애널리스트는 10-K, 어닝콜 트랜스크립트, 공시, 뉴스를 하루에 수백 페이지 읽습니다. 그런데 알파는 <strong>남보다 빨리, 남이 놓친 것을 찾는 데서</strong> 나오죠.</p>
+        <p>기존엔 사람이 전부 읽거나 키워드 검색에 의존했는데, 검색은 '어디 있는지'만 알려주고 '그래서 뭐라는지'는 여전히 사람이 판단해야 했습니다.</p>
+        <p>LinqAlpha는 멀티에이전트가 <strong>리서치 과정 자체를 수행</strong>해서, 질문을 던지면 근거와 함께 답을 냅니다. '검색 도구'에서 '리서치 수행자'로 한 단계 올라간 거라고 이해했습니다."</p>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q2</span><span class="tag">기술 이해</span></div>
+      <p class="q-text">멀티에이전트 시스템이 금융 리서치에 왜 필요한가요?</p>
+      <div class="chain"><span class="step">단일 LLM의 한계</span><span class="arrow">→</span><span class="step">리서치는 다단계</span><span class="arrow">→</span><span class="step">검증 가능성</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">모범답안</span>
+        <p>"리서치는 한 번의 질의응답이 아니라 <strong>단계적 작업</strong>입니다. 공시를 찾고, 숫자를 뽑고, 전분기와 비교하고, 경쟁사와 맞춰보고, 결론을 쓰죠.</p>
+        <p>단일 모델에 전부 떠넘기면 중간 과정이 블랙박스가 되고 어디서 틀렸는지 알 수 없습니다. 에이전트를 쪼개면 <strong>각 단계의 출력을 검증</strong>할 수 있고, 틀린 단계만 고칠 수 있습니다.</p>
+        <p>기관투자자에게는 답이 맞는 것보다 <strong>왜 그 답인지 추적 가능한 것</strong>이 더 중요하기 때문에, 이 구조가 특히 맞다고 봅니다."</p>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q3</span><span class="tag">비즈니스 감각</span><span class="tag hot">BD 핵심</span></div>
+      <p class="q-text">고객이 왜 이 제품에 돈을 쓸까요?</p>
+      <div class="chain"><span class="step">ROI가 계산되는 시장</span><span class="arrow">→</span><span class="step">인건비 대비 구독료</span><span class="arrow">→</span><span class="step">커버리지 = 알파 기회</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">모범답안</span>
+        <p>"헤지펀드는 정보 우위가 <strong>곧 수익</strong>이라 ROI 계산이 아주 명확한 고객입니다.</p>
+        <p>애널리스트 한 명의 인건비를 생각하면, 리서치 시간을 30%만 줄여도 같은 인원으로 <strong>커버리지 종목 수를 늘릴 수</strong> 있습니다. 그게 곧 알파 기회의 확대죠. 구독료는 그 대비 작습니다.</p>
+        <p>그래서 '있으면 좋은' 툴이 아니라 <strong>투자 대비 수익이 숫자로 계산되는</strong> 제품이고, 그게 기관 세일즈에서 가장 강한 논리라고 생각합니다."</p>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q4</span><span class="tag">경쟁 분석</span><span class="tag hot">거의 확실히 나옴</span></div>
+      <p class="q-text">AlphaSense 같은 경쟁사와 차이가 뭐라고 보나요?</p>
+      <div class="chain"><span class="step">검색 vs 에이전트 수행</span><span class="arrow">→</span><span class="step">신뢰성(AI Lab)</span><span class="arrow">→</span><span class="step">자산군 확장</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">모범답안</span>
+        <p>"포지셔닝이 다르다고 봅니다. AlphaSense는 방대한 콘텐츠 라이브러리와 <strong>검색</strong>에 강점이 있고, 그 영역에서 잘 만든 제품입니다.</p>
+        <p>LinqAlpha는 <strong>에이전트가 리서치를 수행</strong>하는 쪽이고, 특히 <strong>AI Lab에서 'AI 판단을 언제 신뢰할 수 있나'를 연구</strong>한다는 점이 인상적이었습니다. 기관투자자는 틀린 답 하나가 손실이라 검증 가능성이 구매 결정 요인이거든요.</p>
+        <p>또 시리즈 A 이후 <strong>주식에서 매크로·크레딧·멀티애셋으로</strong> 확장하고 있어서, 전략별 커버리지로 차별화하는 흐름으로 이해했습니다."</p>
+      </div>
+      <div class="mini">
+        <h4>주의</h4>
+        <ul class="tight"><li><strong>경쟁사를 깎아내리지 마세요.</strong> "AlphaSense는 구식이죠"는 미성숙해 보입니다. 반드시 "잘 만든 제품이다 + 포지셔닝이 다르다" 순서로.</li></ul>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q5</span><span class="tag">QA · 주요 업무</span><span class="tag hot">여기가 승부처</span></div>
+      <p class="q-text">제품을 써봤다면 개선점을 말해보세요.</p>
+      <div class="chain"><span class="step">관찰</span><span class="arrow">→</span><span class="step">왜 문제인가</span><span class="arrow">→</span><span class="step">제안</span><span class="arrow">→</span><span class="step">임팩트</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">답변 예시 — 아시아 공시 커버리지</span>
+        <p><strong>관찰</strong> — 미국 공시 기반 질문은 답이 정확한데, 한국 기업 질문은 근거가 영문 리포트에 치우쳐 있었습니다.</p>
+        <p><strong>왜 문제</strong> — 서울 오피스가 있고 아시아 기관을 타깃하는데, 국내 기관은 DART 원문과 한국어 어닝콜을 직접 다루는지를 도입 기준으로 봅니다.</p>
+        <p><strong>제안</strong> — DART·TDnet 원문 파싱 품질을 우선 과제로, 한국어 어닝콜 트랜스크립션을 파일럿으로.</p>
+        <p><strong>임팩트</strong> — 아시아 기관 세일즈의 가장 큰 거부 사유를 제거할 수 있습니다.</p>
+      </div>
+      <div class="mini">
+        <h4>개선안 소재 — 써보고 2개만 고르세요</h4>
+        <ul class="tight">
+          <li><strong>출처 추적 UX</strong> — 숫자 클릭 한 번에 원문 문장으로 가는가. 애널리스트 신뢰의 전부.</li>
+          <li><strong>섹터별 템플릿</strong> — 반도체·바이오·금융은 보는 지표가 다름. 프리셋 질문 세트.</li>
+          <li><strong>한국어·일본어 어닝콜</strong> — 현지 기업 콘퍼런스콜은 영어가 아님.</li>
+          <li><strong>온보딩</strong> — 처음 쓴 사람이 "무슨 질문을 던져야 하나"를 아는가.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q6</span><span class="tag">케이스</span></div>
+      <p class="q-text">일본(또는 홍콩) 시장 진입 전략을 짜본다면?</p>
+      <div class="chain"><span class="step">시장·세그먼트</span><span class="arrow">→</span><span class="step">Pain의 차이</span><span class="arrow">→</span><span class="step">진입 경로</span><span class="arrow">→</span><span class="step">현지화</span><span class="arrow">→</span><span class="step">KPI</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">답변 골격</span>
+        <p><strong>① 세그먼트</strong> — 헤지펀드 / 대형 운용사 / 증권사 리서치 중 1차 타깃을 먼저 정합니다. 예산 결정이 빠른 헤지펀드부터.</p>
+        <p><strong>② Pain의 차이</strong> — 일본 기관은 영어 리서치 접근성과 일본어 공시 처리를 <strong>둘 다</strong> 필요로 합니다.</p>
+        <p><strong>③ 진입 경로</strong> — 일본 B2B는 관계·레퍼런스 중심이라, 직판보다 <strong>레퍼런스 고객 1곳을 먼저 확보해 확산</strong>시키는 게 정석입니다.</p>
+        <p><strong>④ 현지화</strong> — 언어, TDnet 공시 체계, 금융청 규제, 데이터 보안 요구사항.</p>
+        <p><strong>⑤ KPI</strong> — 6개월 내 파일럿 3곳 → 레퍼런스 1곳 → 확산.</p>
+      </div>
+      <div class="mini">
+        <h4>케이스 답변 원칙</h4>
+        <ul class="tight">
+          <li>정답을 맞히는 게 아니라 <strong>구조적으로 쪼개는 능력</strong>을 봅니다.</li>
+          <li>"먼저 세 가지로 나눠서 보겠습니다"로 시작하면 절반은 먹고 들어갑니다.</li>
+          <li>모르는 숫자는 추측하지 말고 <strong>"무엇을 확인해야 하는지"</strong>로 답하세요.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q7</span><span class="tag">금융 지식</span><span class="tag hot">최대 무기</span></div>
+      <p class="q-text">공시에서 뭘 보나요? / 헤지펀드와 운용사 차이? / 관심 종목?</p>
+      <div class="cards">
+        <div class="card">
+          <h4>공시에서 보는 것</h4>
+          <ul>
+            <li>MD&amp;A의 <strong>톤 변화</strong> — 전분기 대비 표현 차이</li>
+            <li>세그먼트별 실적 분해</li>
+            <li><strong>가이던스 수정</strong> 여부와 방향</li>
+            <li>Footnote — 회계정책 변경, 우발부채</li>
+            <li>어닝콜에서 경영진이 <strong>질문을 회피하는 지점</strong></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>헤지펀드 vs 자산운용사</h4>
+          <ul>
+            <li>보수구조 — 성과보수(2/20) vs 고정 운용보수</li>
+            <li>롱숏·레버리지·파생 활용 여부</li>
+            <li>규제 수준과 공시 의무</li>
+            <li>투자자 — 기관·고액자산가 vs 리테일 포함</li>
+            <li><strong>절대수익 vs 벤치마크 상대수익</strong></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>관심 종목 — 논리 4단</h4>
+          <ul>
+            <li>왜 미스프라이싱인가</li>
+            <li>촉매(catalyst)는 무엇인가</li>
+            <li>리스크는 무엇인가</li>
+            <li><strong>내가 틀렸다면 어떤 신호로 알 수 있나</strong></li>
+          </ul>
+          <p>마지막 항목을 넣으면 "진짜 투자 사고를 한다"는 인상을 줍니다. 1~2개 반드시 준비.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <div class="q-tag"><span class="q-id">Q8</span><span class="tag">도구 역량</span></div>
+      <p class="q-text">Excel·Python은 어느 수준인가요?</p>
+      <div class="chain"><span class="step">무엇을</span><span class="arrow">→</span><span class="step">어떻게</span><span class="arrow">→</span><span class="step">결과</span></div>
+      <div class="answer" tabindex="0">
+        <span class="who">원칙</span>
+        <p>"할 수 있습니다"는 답이 아닙니다. <strong>무엇을 어떻게 자동화했고 뭐가 줄었는지</strong>를 말하세요.</p>
+        <p>쓸 수 있는 소재: 영어 실수 노트 웹앱 — JSON 데이터 구조를 직접 설계하고, 대화에서 실수를 추출해 <strong>1,100건 이상 축적</strong>, 반복 패턴을 분석해 약점을 도출. 데이터 수집·정리·분석을 전부 직접 했다는 증거입니다.</p>
+        <p>부족한 영역은 <strong>솔직하게 + 학습 중인 증거</strong>로. 스타트업은 과장보다 정직한 자기평가를 선호합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>역질문</h2></div>
+    <p class="sec-note">끝에 질문이 없으면 감점입니다. 2~3개 준비하고, 처우 얘기는 이 단계에서 꺼내지 않습니다.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>준비할 질문</h4>
+        <ul>
+          <li>6개월 인턴 기간에 <strong>성공적이라고 평가받는 모습</strong>은 구체적으로 어떤 건가요?</li>
+          <li>BD 조직이 리서치팀·엔지니어링팀과 실제로 어떻게 협업하나요?</li>
+          <li>지금 비즈니스 확장에서 <strong>가장 큰 병목</strong>은 무엇인가요?</li>
+          <li>AI Lab의 연구가 제품에 어떻게 반영되나요?</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>이 단계에서 피할 질문</h4>
+        <ul>
+          <li>연봉·휴가·워라밸 — 처우 협의 단계에서</li>
+          <li>검색하면 바로 나오는 사실 확인</li>
+          <li>"제가 뭘 준비하면 되나요?" — 이미 준비했어야 하는 것</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>첫 1분에 박을 한 문장</h2></div>
+    <p class="sec-note">이 포지션 자격요건 세 개가 그대로 겹치는 조합입니다. 자기소개 끝에 남기세요.</p>
+    <div class="pitch">
+      <span class="label">차별화 포지셔닝</span>
+      <blockquote>"자본시장 구조를 아는 사람(CFA Level 1·투자자산운용사), 영어로 글로벌 리서치가 가능한 사람, AI가 어떻게 작동하는지 이해하는 사람 — 이 셋이 동시에 되는 지원자는 드물다고 생각합니다. 이 포지션이 요구하는 게 정확히 그 교집합이라 지원했습니다."</blockquote>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>준비 체크리스트</h2></div>
+    <p class="sec-note">위에서 아래 순서로. 1번을 못 하면 나머지를 다 해도 격차가 안 벌어집니다.</p>
+    <div class="panel">
+      <div class="bar-row">
+        <div class="bar"><i id="barFill"></i></div>
+        <span class="bar-num" id="barNum">0 / 7</span>
+      </div>
+      <div id="tasks">
+        <div class="task"><input type="checkbox" id="c1" data-task><label for="c1"><span class="t-name">제품 데모 신청하고 직접 써보기</span><span class="t-why">개선안 2개의 재료. 최우선</span></label><span class="t-time">2~3h</span></div>
+        <div class="task"><input type="checkbox" id="c2" data-task><label for="c2"><span class="t-name">개선안 2개를 4단 구조로 쓰기</span><span class="t-why">관찰 → 왜 문제 → 제안 → 임팩트</span></label><span class="t-time">1h</span></div>
+        <div class="task"><input type="checkbox" id="c3" data-task><label for="c3"><span class="t-name">회사 팩트 6개 암기</span><span class="t-why">창업자·펀딩·AI Lab·확장 방향</span></label><span class="t-time">30m</span></div>
+        <div class="task"><input type="checkbox" id="c4" data-task><label for="c4"><span class="t-name">관심 종목 1~2개 논리 준비</span><span class="t-why">미스프라이싱 → 촉매 → 리스크 → 반증 신호</span></label><span class="t-time">1h</span></div>
+        <div class="task"><input type="checkbox" id="c5" data-task><label for="c5"><span class="t-name">AlphaSense 비교 의견 정리</span><span class="t-why">경쟁사 비하 금지. 포지셔닝 차이로</span></label><span class="t-time">40m</span></div>
+        <div class="task"><input type="checkbox" id="c6" data-task><label for="c6"><span class="t-name">영어로 자기소개·동기 입에 붙이기</span><span class="t-why">글로벌 팀이라 영어 섞일 가능성</span></label><span class="t-time">1h</span></div>
+        <div class="task"><input type="checkbox" id="c7" data-task><label for="c7"><span class="t-name">역질문 3개 메모</span><span class="t-why">성공 기준·협업 구조·병목</span></label><span class="t-time">20m</span></div>
+      </div>
+    </div>
+    <div class="callout warn">
+      <span class="ctitle">하지 말 것</span>
+      <p>경쟁사 비하 · "배우고 싶어서 왔습니다"로만 끝내기(기여 관점 없음) · USCPA 준비를 먼저 꺼내기(몰입 의심을 부릅니다. 물으면 솔직하게, 다만 "지금은 이 일에 집중하고 싶다"로 닫으세요) · 암기한 티 나는 답변.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>메모장</h2></div>
+    <p class="sec-note">개선안 초안, 관심 종목 논리, 면접관이 물은 것. GitHub에 저장되니 컴퓨터에서 쓰고 휴대폰으로 열어도 그대로입니다.</p>
+    <div class="panel">
+      <div class="memo-bar">
+        <h4>면접 준비 메모</h4>
+        <span id="saveState">불러오는 중…</span>
+      </div>
+      <textarea id="memoText" placeholder="개선안 1
+· 관찰 —
+· 왜 문제 —
+· 제안 —
+· 임팩트 —
+
+관심 종목
+· 왜 미스프라이싱 —
+· 촉매 —
+· 리스크 —
+· 반증 신호 —
+
+면접관에게 물어볼 것
+·"></textarea>
+      <div class="filters">
+        <button class="btn primary" id="saveBtn" type="button">저장</button>
+        <span class="sec-note" style="font-size:12.5px">타이핑을 멈추면 자동으로 저장됩니다.</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    회사 정보는 2026년 7월 시리즈 A 보도자료와 공개 프로필 기준. 고객 수는 회사 자체 발표치입니다. 면접 전에 공식 사이트에서 한 번 더 확인하세요.
+  </footer>
+
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const TASKS = ["c1","c2","c3","c4","c5","c6","c7"];
+
+// ---- GitHub storage (same token as the English notebook on this site) ----
+const CFG_KEY = "english-notebook-github", FILE_KEY = "interview-notebook-file";
+let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch {}
+let file = "interview-notes.json"; try { file = localStorage.getItem(FILE_KEY) || file; } catch {}
+(function guess() {
+  const m = location.hostname.match(/^([^.]+)\.github\.io$/);
+  if (m) cfg = { owner: m[1], repo: "english-notebook-data", ...cfg };
+})();
+
+let state = { memo: "", checklist: {}, updatedAt: null };
+let sha = null, canWrite = false, saving = Promise.resolve(), dirty = false, typeTimer = null;
+
+const api = () => `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${file}`;
+const headers = () => ({ Accept: "application/vnd.github+json", ...(cfg.token ? { Authorization: "Bearer " + cfg.token } : {}) });
+function b64encode(s) {
+  const bytes = new TextEncoder().encode(s); let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64decode(s) { return new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0))); }
+
+function notice(msg) { $("notice").textContent = msg; $("notice").hidden = !msg; }
+function setSave(txt, cls) { $("saveState").textContent = txt; $("saveState").className = cls || ""; }
+function stamp() { const d = new Date(); return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2); }
+
+function render() {
+  if (!dirty && $("memoText").value !== state.memo) $("memoText").value = state.memo || "";
+  let done = 0;
+  for (const id of TASKS) {
+    const el = $(id); if (!el) continue;
+    el.checked = !!state.checklist[id];
+    if (el.checked) done++;
+    el.disabled = !canWrite;
+  }
+  $("barFill").style.width = (done / TASKS.length * 100) + "%";
+  $("barNum").textContent = done + " / " + TASKS.length;
+  $("memoText").readOnly = !canWrite;
+  $("saveBtn").disabled = !canWrite;
+}
+
+async function pull() {
+  if (!cfg.owner || !cfg.repo) { notice("설정에서 GitHub 저장소를 입력하세요."); setSave("미연결", "err"); render(); return; }
+  setSave("불러오는 중…");
+  try {
+    const r = await fetch(api() + "?t=" + Date.now(), { headers: headers(), cache: "no-store" });
+    if (r.status === 404) {
+      sha = null; canWrite = !!cfg.token;
+      notice(cfg.token ? `${file}이(가) 아직 없어요. 처음 저장하면 만들어집니다.` : "메모를 찾지 못했어요. 비공개 저장소라면 설정에서 토큰을 입력하세요.");
+      setSave(cfg.token ? "새 파일" : "읽기 전용", cfg.token ? "" : "err");
+      render(); return;
+    }
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json(); sha = j.sha;
+    const text = j.content ? b64decode(j.content)
+      : await (await fetch(api() + "?t=" + Date.now(), { headers: { ...headers(), Accept: "application/vnd.github.raw+json" }, cache: "no-store" })).text();
+    const parsed = JSON.parse(text);
+    state = { memo: typeof parsed.memo === "string" ? parsed.memo : "", checklist: parsed.checklist && typeof parsed.checklist === "object" ? parsed.checklist : {}, updatedAt: parsed.updatedAt || null };
+    canWrite = !!cfg.token;
+    dirty = false;
+    notice(cfg.token ? "" : "읽기 전용: 저장하려면 설정에서 토큰을 입력하세요.");
+    setSave(canWrite ? "저장됨" : "읽기 전용", canWrite ? "ok" : "err");
+    render();
+  } catch {
+    notice("GitHub에 연결하지 못했어요. 인터넷 연결과 설정의 저장소 이름을 확인하세요.");
+    setSave("연결 실패", "err"); render();
+  }
+}
+
+function push(message) {
+  saving = saving.then(async () => {
+    if (!cfg.token) { notice("저장하려면 설정에서 토큰을 입력하세요."); setSave("토큰 없음", "err"); return; }
+    setSave("저장 중…");
+    state.updatedAt = new Date().toISOString();
+    const body = { message, content: b64encode(JSON.stringify(state, null, 2) + "\n"), ...(sha ? { sha } : {}) };
+    const r = await fetch(api(), { method: "PUT", headers: { ...headers(), "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (r.ok) { sha = (await r.json()).content.sha; dirty = false; notice(""); setSave("저장됨 " + stamp(), "ok"); return; }
+    if (r.status === 409 || r.status === 422) {
+      notice("다른 곳에서 메모가 바뀌었어요. 최신 버전을 불러왔으니 마지막 변경을 다시 해주세요.");
+      setSave("충돌 — 다시 시도", "err"); await pull(); return;
+    }
+    setSave("저장 실패 (" + r.status + ")", "err");
+    notice("GitHub 저장 실패 (오류 " + r.status + "). 설정의 토큰을 확인하세요.");
+  });
+  return saving;
+}
+
+// ---- interactions ----
+$("memoText").addEventListener("input", () => {
+  dirty = true; state.memo = $("memoText").value;
+  setSave("편집 중…");
+  if (typeTimer) clearTimeout(typeTimer);
+  typeTimer = setTimeout(() => push("Update interview memo"), 1200);
+});
+$("saveBtn").onclick = () => { if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; } state.memo = $("memoText").value; push("Update interview memo"); };
+for (const id of TASKS) {
+  $(id).addEventListener("change", () => {
+    state.checklist[id] = $(id).checked;
+    render();
+    push("Update interview checklist");
+  });
+}
+
+// ---- study mode (per-browser) ----
+const SKEY = "linqalpha-study-mode";
+try { if (localStorage.getItem(SKEY) === "1") { $("studyMode").checked = true; document.body.classList.add("hide-answers"); } } catch {}
+$("studyMode").addEventListener("change", () => {
+  document.body.classList.toggle("hide-answers", $("studyMode").checked);
+  try { localStorage.setItem(SKEY, $("studyMode").checked ? "1" : "0"); } catch {}
+});
+
+// ---- settings / misc ----
+$("settingsBtn").onclick = () => {
+  $("sOwner").value = cfg.owner || ""; $("sRepo").value = cfg.repo || ""; $("sToken").value = cfg.token || ""; $("sFile").value = file;
+  $("settingsForm").hidden = !$("settingsForm").hidden;
+};
+$("settingsForm").addEventListener("submit", e => {
+  e.preventDefault();
+  cfg = { owner: $("sOwner").value.trim(), repo: $("sRepo").value.trim(), token: $("sToken").value.trim() };
+  file = $("sFile").value.trim() || "interview-notes.json";
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); localStorage.setItem(FILE_KEY, file); } catch {}
+  $("settingsForm").hidden = true; pull();
+});
+$("refreshBtn").onclick = pull;
+$("exportBtn").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }));
+  a.download = "interview-notes-backup.json";
+  document.body.append(a); a.click(); a.remove();
+};
+
+render();
+pull();
+</script>
+</body>
+</html>

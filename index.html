@@ -76,6 +76,11 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 
 /* entries */
 .list{display:flex;flex-direction:column;gap:10px}
+.pager{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+.pager .info{width:100%;text-align:center;font:500 12.5px var(--mono);color:var(--muted)}
+.pager .chip{min-width:38px;font-variant-numeric:tabular-nums}
+.pager .chip:disabled{opacity:.4;cursor:default}
+.pager .gap{color:var(--muted);padding:0 2px}
 .entry{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:8px;min-width:0}
 .said{font-family:var(--display);font-size:18px;color:var(--strike);overflow-wrap:anywhere;text-decoration:line-through;text-decoration-thickness:1.5px;cursor:pointer;transition:text-decoration-color .15s}
 .said:hover,.said.clear{text-decoration-color:transparent}
@@ -180,9 +185,11 @@ body{margin:0}
       <input class="grow" id="search" type="search" placeholder="Search phrases">
     </div>
 
+    <div class="pager" id="pagerTop" hidden></div>
     <div class="list" id="list">
       
     </div>
+    <div class="pager" id="pagerBottom" hidden></div>
   </section>
 
   <section id="viewDrill" hidden>
@@ -205,6 +212,8 @@ const STATUS_LABEL = { new: "New", learning: "Learning", mastered: "Mastered" };
 const KEY = "english-mistake-notebook";
 let db = true, canWrite = false, items = [];
 const filter = { cat: "all", status: "all", q: "" };
+const PAGE_SIZE = 100;
+let page = 1;
 let drillItem = null, drillRevealed = false;
 
 const $ = id => document.getElementById(id);
@@ -227,7 +236,7 @@ function renderCatChips() {
   const box = $("catFilters"); box.textContent = "";
   for (const [k, v] of [["all", "All types"], ...Object.entries(CATS)]) {
     box.append(el("button", { class: "chip", "aria-pressed": String(filter.cat === k), text: v,
-      onclick: () => { filter.cat = k; renderCatChips(); renderList(); } }));
+      onclick: () => { filter.cat = k; page = 1; renderCatChips(); renderList(); } }));
   }
 }
 
@@ -269,13 +278,46 @@ function extras(i) {
   return out;
 }
 
+function pageNumbers(pages) {
+  const want = new Set([1, pages, page - 1, page, page + 1]);
+  const out = []; let last = 0;
+  for (let n = 1; n <= pages; n++) {
+    if (!want.has(n)) continue;
+    if (n - last > 1) out.push(null);
+    out.push(n); last = n;
+  }
+  return out;
+}
+function renderPager(total, pages, start) {
+  for (const id of ["pagerTop", "pagerBottom"]) {
+    const box = $(id); box.textContent = "";
+    box.hidden = false;
+    box.append(el("div", { class: "info", text: `${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}` + (pages > 1 ? ` · page ${page} of ${pages}` : "") }));
+    if (pages < 2) continue;
+    const go = n => () => { page = n; renderList(); $("pagerTop").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    const prev = el("button", { class: "chip", text: "‹ Prev", onclick: go(page - 1) }); prev.disabled = page === 1;
+    box.append(prev);
+    for (const n of pageNumbers(pages)) {
+      if (n === null) { box.append(el("span", { class: "gap", text: "…" })); continue; }
+      box.append(el("button", { class: "chip", "aria-pressed": String(n === page), "aria-label": "Page " + n, text: String(n), onclick: go(n) }));
+    }
+    const next = el("button", { class: "chip", text: "Next ›", onclick: go(page + 1) }); next.disabled = page === pages;
+    box.append(next);
+  }
+}
+
 function renderList() {
   const list = $("list"); list.textContent = "";
+  $("pagerTop").hidden = $("pagerBottom").hidden = true;
   if (!db) { list.append(el("div", { class: "empty", text: "Your notebook appears here once it connects." })); return; }
   const rows = visible();
   if (!items.length) { list.append(el("div", { class: "empty", text: "No mistakes logged yet. Open “Add a mistake” above to save your first one." })); return; }
   if (!rows.length) { list.append(el("div", { class: "empty", text: "Nothing matches these filters." })); return; }
-  for (const i of rows) {
+  const pages = Math.ceil(rows.length / PAGE_SIZE);
+  page = Math.min(Math.max(1, page), pages);
+  const start = (page - 1) * PAGE_SIZE;
+  renderPager(rows.length, pages, start);
+  for (const i of rows.slice(start, start + PAGE_SIZE)) {
     const status = el("button", { class: "status", "data-s": i.status, text: STATUS_LABEL[i.status] || "New",
       title: "Change status", onclick: () => save(i.id, { status: STATUS_NEXT[i.status] || "learning", reps: 0 }) });
     if (!canWrite) status.disabled = true;
@@ -426,8 +468,8 @@ function showTab(which) {
 }
 $("tabLog").onclick = () => showTab("log");
 $("tabDrill").onclick = () => showTab("drill");
-$("statusFilter").onchange = e => { filter.status = e.target.value; renderList(); };
-$("search").oninput = e => { filter.q = e.target.value; renderList(); };
+$("statusFilter").onchange = e => { filter.status = e.target.value; page = 1; renderList(); };
+$("search").oninput = e => { filter.q = e.target.value; page = 1; renderList(); };
 
 // tap a struck-through sentence to clear the line (phones have no hover)
 document.addEventListener("click", e => { const t = e.target.closest(".said"); if (t) t.classList.toggle("clear"); });

@@ -288,11 +288,24 @@ function pageNumbers(pages) {
   }
   return out;
 }
-function renderPager(total, pages, start) {
+// Pages are counted from the oldest entry, so every page except page 1 holds exactly
+// PAGE_SIZE entries and keeps the same entries when new ones are added. Page 1 (newest)
+// holds the remainder.
+function pageBounds(total) {
+  const first = total % PAGE_SIZE || Math.min(total, PAGE_SIZE);
+  const pages = 1 + Math.ceil((total - first) / PAGE_SIZE);
+  const start = page === 1 ? 0 : first + (page - 2) * PAGE_SIZE;
+  const end = page === 1 ? first : start + PAGE_SIZE;
+  return { pages, start, end };
+}
+function renderPager(total, pages, start, end) {
+  const fmt = n => n.toLocaleString("en-US");
+  // entries numbered by date added: the oldest is #1
+  const from = total - end + 1, to = total - start;
   for (const id of ["pagerTop", "pagerBottom"]) {
     const box = $(id); box.textContent = "";
     box.hidden = false;
-    box.append(el("div", { class: "info", text: `${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}` + (pages > 1 ? ` · page ${page} of ${pages}` : "") }));
+    box.append(el("div", { class: "info", text: `#${fmt(from)}–${fmt(to)} of ${fmt(total)}` + (pages > 1 ? ` · page ${page} of ${pages}` : "") }));
     if (pages < 2) continue;
     const go = n => () => { page = n; renderList(); $("pagerTop").scrollIntoView({ behavior: "smooth", block: "start" }); };
     const prev = el("button", { class: "chip", text: "‹ Prev", onclick: go(page - 1) }); prev.disabled = page === 1;
@@ -313,11 +326,11 @@ function renderList() {
   const rows = visible();
   if (!items.length) { list.append(el("div", { class: "empty", text: "No mistakes logged yet. Open “Add a mistake” above to save your first one." })); return; }
   if (!rows.length) { list.append(el("div", { class: "empty", text: "Nothing matches these filters." })); return; }
-  const pages = Math.ceil(rows.length / PAGE_SIZE);
-  page = Math.min(Math.max(1, page), pages);
-  const start = (page - 1) * PAGE_SIZE;
-  renderPager(rows.length, pages, start);
-  for (const i of rows.slice(start, start + PAGE_SIZE)) {
+  page = Math.max(1, page);
+  let b = pageBounds(rows.length);
+  if (page > b.pages) { page = b.pages; b = pageBounds(rows.length); }
+  renderPager(rows.length, b.pages, b.start, b.end);
+  for (const i of rows.slice(b.start, b.end)) {
     const status = el("button", { class: "status", "data-s": i.status, text: STATUS_LABEL[i.status] || "New",
       title: "Change status", onclick: () => save(i.id, { status: STATUS_NEXT[i.status] || "learning", reps: 0 }) });
     if (!canWrite) status.disabled = true;
@@ -400,7 +413,9 @@ function b64encode(s) {
   return btoa(bin);
 }
 function b64decode(s) { return new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), c => c.charCodeAt(0))); }
-function sortItems() { items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")); }
+// newest first; entries saved in the same batch share a timestamp, so break ties by id
+function idKey(i) { const s = String(i.id || "").slice(1); return /^\d+$/.test(s) ? +s : parseInt(s, 36) || 0; }
+function sortItems() { items.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "") || idKey(b) - idKey(a)); }
 
 async function pull() {
   if (!cfg.owner || !cfg.repo) { notice("Open Settings and enter your GitHub repo to load your notebook."); renderList(); return; }

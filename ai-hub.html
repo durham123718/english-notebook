@@ -151,6 +151,7 @@ const keyOf = id => (cfg["k_" + id] || "").trim();
 const modelOf = id => (cfg["m_" + id] || "").trim() || BY[id].model;
 // retired default model names saved by older versions of this page: fall back to the current default
 const RETIRED = { gemini: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-3.1-pro-preview"] };
+if (cfg.m_gemini && !/flash/i.test(cfg.m_gemini)) delete cfg.m_gemini; // Gemini runs on Flash models only
 for (const [id, names] of Object.entries(RETIRED)) if (names.includes(cfg["m_" + id]) || names.includes(cfg[{ gemini: "mGemini" }[id]])) { delete cfg["m_" + id]; delete cfg.mGemini; }
 // migrate keys saved by the earlier version of this page
 for (const [o, n] of [["kGpt", "gpt"], ["kClaude", "claude"], ["kGemini", "gemini"]]) if (cfg[o] && !cfg["k_" + n]) cfg["k_" + n] = cfg[o];
@@ -161,7 +162,7 @@ for (const p of PROVIDERS) {
   const g = document.createElement("div"); g.className = "grp"; g.style.setProperty("--c", `var(--${p.id})`);
   g.innerHTML = `<b>${p.name}<span class="tag ${p.free ? "free" : ""}">${p.free ? "무료 티어" : "유료"}</span>${p.note ? `<span class="tag">${p.note}</span>` : ""}</b>
     <label class="f">API 키 <span class="meta">${p.keyUrl}</span><input id="k_${p.id}" type="password" autocomplete="off" placeholder="${p.keyHint}"></label>
-    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.auto ? "비워두면 자동 (무료 Flash 모델)" : p.model}" list="dl_${p.id}"></label>
+    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.auto ? "자동: 최신 Flash 모델 (Flash만 사용)" : p.model}" list="dl_${p.id}"></label>
     <datalist id="dl_${p.id}"></datalist>
     ${p.kind === "claude" ? "" : `<div class="row"><button class="btn" type="button" data-list="${p.id}" style="padding:5px 10px;font-size:13px">사용 가능한 모델 불러오기</button><span class="meta" id="ls_${p.id}"></span></div>`}`;
   $("keys").append(g);
@@ -271,11 +272,12 @@ function bestFlash(names) {
 }
 async function geminiModel() {
   const set = (cfg.m_gemini || "").trim();
-  if (set) return set;
+  if (/flash/i.test(set)) return set; // Flash models only (free tier)
   if (!geminiAuto) {
     try { geminiAuto = bestFlash(await geminiModels(keyOf("gemini"))); } catch {}
     if (!geminiAuto) throw new Error("사용할 수 있는 Gemini Flash 모델을 찾지 못했습니다. 설정에서 '사용 가능한 모델 불러오기'로 직접 고르세요");
   }
+  const lbl = document.getElementById("ls_gemini"); if (lbl) lbl.textContent = `자동 선택: ${geminiAuto}`;
   return geminiAuto;
 }
 async function callGemini(msgs) {

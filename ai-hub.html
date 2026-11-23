@@ -134,7 +134,7 @@ const CFG_KEY = "ai-hub-config";
 // ---------- provider registry ----------
 // kind "openai": OpenAI-compatible chat completions endpoint
 const PROVIDERS = [
-  { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "gemini-2.5-flash", keyHint: "AIza...", keyUrl: "aistudio.google.com" },
+  { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "gemini-3.1-pro-preview", keyHint: "AIza...", keyUrl: "aistudio.google.com" },
   { id: "groq", name: "Groq", kind: "openai", free: true, model: "openai/gpt-oss-120b", keyHint: "gsk_...", keyUrl: "console.groq.com",
     url: "https://api.groq.com/openai/v1/chat/completions" },
   { id: "glm", name: "GLM", kind: "openai", free: true, model: "glm-4.5-flash", keyHint: "Z.ai 키", keyUrl: "z.ai",
@@ -149,6 +149,9 @@ const NAMES = Object.fromEntries(PROVIDERS.map(p => [p.id, p.name]));
 let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } catch {}
 const keyOf = id => (cfg["k_" + id] || "").trim();
 const modelOf = id => (cfg["m_" + id] || "").trim() || BY[id].model;
+// retired default model names saved by older versions of this page: fall back to the current default
+const RETIRED = { gemini: ["gemini-2.5-pro", "gemini-2.5-flash"] };
+for (const [id, names] of Object.entries(RETIRED)) if (names.includes(cfg["m_" + id]) || names.includes(cfg[{ gemini: "mGemini" }[id]])) { delete cfg["m_" + id]; delete cfg.mGemini; }
 // migrate keys saved by the earlier version of this page
 for (const [o, n] of [["kGpt", "gpt"], ["kClaude", "claude"], ["kGemini", "gemini"]]) if (cfg[o] && !cfg["k_" + n]) cfg["k_" + n] = cfg[o];
 for (const [o, n] of [["mGpt", "gpt"], ["mClaude", "claude"], ["mGemini", "gemini"]]) if (cfg[o] && !cfg["m_" + n]) cfg["m_" + n] = cfg[o];
@@ -158,11 +161,41 @@ for (const p of PROVIDERS) {
   const g = document.createElement("div"); g.className = "grp"; g.style.setProperty("--c", `var(--${p.id})`);
   g.innerHTML = `<b>${p.name}<span class="tag ${p.free ? "free" : ""}">${p.free ? "무료 티어" : "유료"}</span>${p.note ? `<span class="tag">${p.note}</span>` : ""}</b>
     <label class="f">API 키 <span class="meta">${p.keyUrl}</span><input id="k_${p.id}" type="password" autocomplete="off" placeholder="${p.keyHint}"></label>
-    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.model}"></label>`;
+    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.model}" list="dl_${p.id}"></label>
+    <datalist id="dl_${p.id}"></datalist>
+    ${p.kind === "claude" ? "" : `<div class="row"><button class="btn" type="button" data-list="${p.id}" style="padding:5px 10px;font-size:13px">사용 가능한 모델 불러오기</button><span class="meta" id="ls_${p.id}"></span></div>`}`;
   $("keys").append(g);
   $("k_" + p.id).value = keyOf(p.id); $("m_" + p.id).value = cfg["m_" + p.id] || "";
 }
 if (!PROVIDERS.some(p => keyOf(p.id))) $("settings").open = true;
+async function listModels(id) {
+  const key = $("k_" + id).value.trim(), out = $("ls_" + id);
+  if (!key) { out.textContent = "먼저 API 키를 입력하세요"; return; }
+  out.textContent = "불러오는 중…";
+  try {
+    let names = [];
+    if (BY[id].kind === "gemini") {
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } });
+      const j = await r.json(); if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message));
+      names = (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+    } else {
+      const r = await fetch(BY[id].url.replace(/\/chat\/completions$/, "/models"), { headers: { Authorization: "Bearer " + key } });
+      const j = await r.json(); if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message));
+      names = (j.data || []).map(m => m.id);
+    }
+    $("dl_" + id).replaceChildren(...names.map(n => Object.assign(document.createElement("option"), { value: n })));
+    out.textContent = names.length ? `${names.length}개. 모델 칸을 누르면 목록이 보입니다` : "목록이 비어 있습니다";
+  } catch (e) { out.textContent = "⚠ " + (e.message || "불러오지 못했습니다 (CORS일 수 있음)"); }
+}
+document.querySelectorAll("[data-list]").forEach(b => b.onclick = () => listModels(b.dataset.list));
+// error with a suggested replacement model -> offer a one-click fix
+function suggestFix(box, e) {
+  if (!e.suggest) return;
+  const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.style.marginTop = "6px";
+  b.textContent = `${e.suggest.model}(으)로 바꾸고 저장`;
+  b.onclick = () => { cfg["m_" + e.suggest.id] = e.suggest.model; $("m_" + e.suggest.id).value = e.suggest.model; persist(); b.textContent = "바꿨습니다 ✓ 다시 보내 보세요"; b.disabled = true; };
+  box.append(document.createElement("br"), b);
+}
 function persist() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); return true; } catch { return false; } }
 $("saveBtn").onclick = () => {
   for (const p of PROVIDERS) { cfg["k_" + p.id] = $("k_" + p.id).value.trim(); cfg["m_" + p.id] = $("m_" + p.id).value.trim(); }
@@ -231,7 +264,13 @@ async function callGemini(msgs) {
     body: JSON.stringify({ contents })
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message));
+  if (!r.ok) {
+    const msg = j.error?.message || "";
+    const rec = msg.match(/use (?:models\/)?([\w.\-]+)/i)?.[1];
+    const err = new Error(httpMsg(r.status, msg) + (rec ? `\n→ 설정에서 Gemini 모델을 ${rec}(으)로 바꾸세요.` : ""));
+    if (rec) err.suggest = { id: "gemini", model: rec };
+    throw err;
+  }
   const cand = j.candidates?.[0];
   const text = (cand?.content?.parts || []).map(p => p.text || "").join("");
   if (!text) throw new Error("빈 응답 (차단 사유: " + (j.promptFeedback?.blockReason || cand?.finishReason || "알 수 없음") + ")");
@@ -306,7 +345,7 @@ async function runOne(id, prompt) {
     const m = document.createElement("div"); m.className = "meta"; m.textContent = `${r.model || ""} · ${((performance.now() - t0) / 1000).toFixed(1)}초`; a.append(m);
     last[id] = r.text;
   } catch (e) {
-    hist[id].pop(); a.className = "msg err"; a.textContent = "⚠ " + (e.message || e); last[id] = null;
+    hist[id].pop(); a.className = "msg err"; a.style.whiteSpace = "pre-wrap"; a.textContent = "⚠ " + (e.message || e); suggestFix(a, e); last[id] = null;
   }
   c.querySelector("h2 span").textContent = `${hist[id].filter(x => x.role === "user").length}턴`;
 }
@@ -373,7 +412,7 @@ async function fill(cell, id, msgs) {
     const sp = cell.querySelector("h2 span, h3 span");
     if (sp) sp.textContent = `${((performance.now() - t0) / 1000).toFixed(1)}초`;
     return r.text;
-  } catch (e) { box.className = "msg err"; box.textContent = "⚠ " + (e.message || e); return null; }
+  } catch (e) { box.className = "msg err"; box.style.whiteSpace = "pre-wrap"; box.textContent = "⚠ " + (e.message || e); suggestFix(box, e); return null; }
 }
 function judgeFor(alive) {
   const j = $("judge").value;

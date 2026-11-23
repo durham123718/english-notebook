@@ -12,7 +12,7 @@
 :root{
   --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8;
   --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
-  --gemini:#2B4C9E; --groq:#6250D6; --groqcn:#B91C1C; --openrouter:#9A3412; --glm:#0E7490; --gpt:#1D6B58; --claude:#B4532A;
+  --gemini:#2B4C9E; --groq:#6250D6; --groqcn:#B91C1C; --cerebras:#0F766E; --openrouter:#9A3412; --glm:#0E7490; --gpt:#1D6B58; --claude:#B4532A;
   --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme:light;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
     --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
-    --gemini:#91AAEE; --groq:#A59AF0; --groqcn:#F28B8B; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
+    --gemini:#91AAEE; --groq:#A59AF0; --groqcn:#F28B8B; --cerebras:#5EEAD4; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
   --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
-  --gemini:#91AAEE; --groq:#A59AF0; --groqcn:#F28B8B; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
+  --gemini:#91AAEE; --groq:#A59AF0; --groqcn:#F28B8B; --cerebras:#5EEAD4; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
@@ -80,7 +80,7 @@ select.inline{width:auto;padding:6px}
 <div class="wrap">
   <header>
     <h1>AI 한번에 묻기 · 토론</h1>
-    <p class="sub">질문 하나를 여러 AI에 동시에 보내 나란히 비교하거나(💬 일반), 서로의 답을 검토하며 자동으로 토론하게 해서 더 정확하고 간결한 최종 답을 만듭니다(⚔️ 토론). <b>Gemini · Groq(중국 모델 Qwen·Kimi 포함) · OpenRouter는 무료 티어</b>로 쓸 수 있습니다. API 키가 아예 없다면 <a href="ai-debate-kit.html">무료 토론 키트</a>를 쓰세요. <a href="invest.html">← 노트로</a></p>
+    <p class="sub">질문 하나를 여러 AI에 동시에 보내 나란히 비교하거나(💬 일반), 서로의 답을 검토하며 자동으로 토론하게 해서 더 정확하고 간결한 최종 답을 만듭니다(⚔️ 토론). <b>Gemini · Groq(중국 모델 Qwen·Kimi 포함) · Cerebras · OpenRouter는 무료 티어</b>로 쓸 수 있습니다. ⚡ 표시는 매우 빠른 모델입니다. API 키가 아예 없다면 <a href="ai-debate-kit.html">무료 토론 키트</a>를 쓰세요. <a href="invest.html">← 노트로</a></p>
   </header>
 
   <details class="card" id="settings">
@@ -135,10 +135,12 @@ const CFG_KEY = "ai-hub-config";
 // kind "openai": OpenAI-compatible chat completions endpoint
 const PROVIDERS = [
   { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "", auto: true, keyHint: "AIza...", keyUrl: "aistudio.google.com" },
-  { id: "groq", name: "Groq", kind: "openai", free: true, model: "openai/gpt-oss-120b", keyHint: "gsk_...", keyUrl: "console.groq.com",
+  { id: "groq", name: "Groq", kind: "openai", free: true, fast: true, model: "openai/gpt-oss-120b", keyHint: "gsk_...", keyUrl: "console.groq.com",
     url: "https://api.groq.com/openai/v1/chat/completions" },
-  { id: "groqcn", name: "Qwen·Kimi", kind: "openai", free: true, model: "", auto: true, keyFrom: "groq", keyHint: "", keyUrl: "console.groq.com",
+  { id: "groqcn", name: "Qwen·Kimi", kind: "openai", free: true, fast: true, model: "", auto: true, keyFrom: "groq", keyHint: "", keyUrl: "console.groq.com",
     url: "https://api.groq.com/openai/v1/chat/completions", note: "중국 모델 · Groq(미국) 서버" },
+  { id: "cerebras", name: "Cerebras", kind: "openai", free: true, fast: true, model: "", auto: true, keyHint: "csk-...", keyUrl: "cloud.cerebras.ai",
+    url: "https://api.cerebras.ai/v1/chat/completions", note: "⚡ 매우 빠름" },
   { id: "openrouter", name: "OpenRouter", kind: "openai", free: true, model: "", auto: true, keyHint: "sk-or-...", keyUrl: "openrouter.ai",
     url: "https://openrouter.ai/api/v1/chat/completions", note: "무료 모델 자동 선택" },
   { id: "glm", name: "GLM", kind: "openai", free: true, model: "glm-4.5-flash", keyHint: "Z.ai 키", keyUrl: "z.ai",
@@ -166,7 +168,7 @@ for (const p of PROVIDERS) {
   const g = document.createElement("div"); g.className = "grp"; g.style.setProperty("--c", `var(--${p.id})`);
   g.innerHTML = `<b>${p.name}<span class="tag ${p.free ? "free" : ""}">${p.free ? "무료 티어" : "유료"}</span>${p.note ? `<span class="tag">${p.note}</span>` : ""}</b>
     ${p.keyFrom ? `<p class="sub" style="margin:0">${NAMES[p.keyFrom]} 키를 함께 씁니다 (따로 가입할 필요 없음)</p>` : `<label class="f">API 키 <span class="meta">${p.keyUrl}</span><input id="k_${p.id}" type="password" autocomplete="off" placeholder="${p.keyHint}"></label>`}
-    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.id === "gemini" ? "자동: 최신 Flash 모델 (Flash만 사용)" : p.id === "groqcn" ? "자동: Groq의 중국 모델 (Kimi/Qwen)" : p.auto ? "자동: 무료 모델" : p.model}" list="dl_${p.id}"></label>
+    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.id === "gemini" ? "자동: 최신 Flash 모델 (Flash만 사용)" : p.id === "groqcn" ? "자동: Groq의 중국 모델 (Kimi/Qwen)" : p.id === "cerebras" ? "자동: Cerebras 제공 모델" : p.auto ? "자동: 무료 모델" : p.model}" list="dl_${p.id}"></label>
     <datalist id="dl_${p.id}"></datalist>
     ${p.kind === "claude" ? "" : `<div class="row"><button class="btn" type="button" data-list="${p.id}" style="padding:5px 10px;font-size:13px">사용 가능한 모델 불러오기</button><span class="meta" id="ls_${p.id}"></span></div>`}`;
   $("keys").append(g);
@@ -221,13 +223,13 @@ function buildUses() {
   for (const p of PROVIDERS) {
     const l = document.createElement("label"); l.className = "chk";
     const i = document.createElement("input"); i.type = "checkbox"; i.dataset.id = p.id;
-    i.checked = p.id in prev ? prev[p.id] : (anyKey ? !!keyOf(p.id) && !p.noDefault : p.free && !p.noDefault);
-    i.onchange = updateMode;
-    l.append(i, document.createTextNode(p.name + (keyOf(p.id) ? "" : " (키 없음)"))); box.append(l);
+    i.checked = p.id in prev ? prev[p.id] : Array.isArray(cfg.sel) ? cfg.sel.includes(p.id) : (anyKey ? !!keyOf(p.id) && !p.noDefault : p.free && !p.noDefault);
+    i.onchange = () => { cfg.sel = selected(); persist(); updateMode(); }; // remember the selection
+    l.append(i, document.createTextNode(p.name + (p.fast ? " ⚡" : "") + (keyOf(p.id) ? "" : " (키 없음)"))); box.append(l);
   }
   const j = $("judge"), jv = j.value; j.replaceChildren();
   for (const p of PROVIDERS) { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name + (keyOf(p.id) ? "" : " (키 없음)"); j.append(o); }
-  j.value = jv && BY[jv] ? jv : (PROVIDERS.find(p => keyOf(p.id) && !p.free) || PROVIDERS.find(p => keyOf(p.id)) || PROVIDERS[0]).id;
+  j.value = jv && BY[jv] ? jv : (PROVIDERS.find(p => keyOf(p.id) && !p.free) || PROVIDERS.find(p => keyOf(p.id) && p.fast) || PROVIDERS.find(p => keyOf(p.id)) || PROVIDERS[0]).id;
 }
 const selected = () => [...$("uses").querySelectorAll("input:checked")].map(i => i.dataset.id);
 
@@ -293,8 +295,25 @@ async function groqChineseModel() {
   const lbl = document.getElementById("ls_groqcn"); if (lbl) lbl.textContent = `자동 선택: ${cnAuto}`;
   return cnAuto;
 }
+let cbAuto = null;
+async function cerebrasModel() {
+  const set = (cfg.m_cerebras || "").trim();
+  if (set) return set;
+  if (!cbAuto) {
+    try {
+      const r = await fetch("https://api.cerebras.ai/v1/models", { headers: { Authorization: "Bearer " + keyOf("cerebras") } });
+      const ids = ((await r.json()).data || []).map(m => m.id);
+      const pref = [/glm/i, /qwen/i, /gpt-oss/i, /llama/i];
+      for (const re of pref) { const hit = ids.filter(i => re.test(i)).sort().reverse()[0]; if (hit) { cbAuto = hit; break; } }
+      if (!cbAuto) cbAuto = ids[0] || null;
+    } catch {}
+    if (!cbAuto) throw new Error("Cerebras 모델 목록을 가져오지 못했습니다. 키를 확인하거나 '사용 가능한 모델 불러오기'로 직접 고르세요");
+  }
+  const lbl = document.getElementById("ls_cerebras"); if (lbl) lbl.textContent = `자동 선택: ${cbAuto}`;
+  return cbAuto;
+}
 async function callOpenAICompat(id, msgs) {
-  const model = id === "openrouter" ? await openrouterModel() : id === "groqcn" ? await groqChineseModel() : modelOf(id);
+  const model = id === "openrouter" ? await openrouterModel() : id === "groqcn" ? await groqChineseModel() : id === "cerebras" ? await cerebrasModel() : modelOf(id);
   const r = await postRetry(BY[id].url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + keyOf(id) },

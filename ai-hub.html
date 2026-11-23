@@ -12,7 +12,7 @@
 :root{
   --bg:#F4F6F9; --surface:#FFFFFF; --ink:#1A2332; --muted:#5C6677; --line:#DCE1E8;
   --accent:#2B4C9E; --accent-soft:#E5EBF7; --chip:#ECEFF4; --bad:#BF3328; --good:#1D6B58;
-  --gemini:#2B4C9E; --groq:#6250D6; --glm:#0E7490; --gpt:#1D6B58; --claude:#B4532A;
+  --gemini:#2B4C9E; --groq:#6250D6; --openrouter:#9A3412; --glm:#0E7490; --gpt:#1D6B58; --claude:#B4532A;
   --body:"IBM Plex Sans KR", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme:light;
@@ -21,13 +21,13 @@
   :root:not([data-theme="light"]){
     --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
     --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
-    --gemini:#91AAEE; --groq:#A59AF0; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
+    --gemini:#91AAEE; --groq:#A59AF0; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#11151C; --surface:#19202A; --ink:#E6EAF1; --muted:#9AA3B3; --line:#2A3240;
   --accent:#91AAEE; --accent-soft:#222C42; --chip:#222935; --bad:#F07A6E; --good:#5CC6A6;
-  --gemini:#91AAEE; --groq:#A59AF0; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
+  --gemini:#91AAEE; --groq:#A59AF0; --openrouter:#F0A07A; --glm:#4FC3DA; --gpt:#5CC6A6; --claude:#E8956B; color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
@@ -80,7 +80,7 @@ select.inline{width:auto;padding:6px}
 <div class="wrap">
   <header>
     <h1>AI 한번에 묻기 · 토론</h1>
-    <p class="sub">질문 하나를 여러 AI에 동시에 보내 나란히 비교하거나(💬 일반), 서로의 답을 검토하며 자동으로 토론하게 해서 더 정확하고 간결한 최종 답을 만듭니다(⚔️ 토론). <b>Gemini · Groq · GLM은 무료 티어</b>로 쓸 수 있습니다. API 키가 아예 없다면 <a href="ai-debate-kit.html">무료 토론 키트</a>를 쓰세요. <a href="invest.html">← 노트로</a></p>
+    <p class="sub">질문 하나를 여러 AI에 동시에 보내 나란히 비교하거나(💬 일반), 서로의 답을 검토하며 자동으로 토론하게 해서 더 정확하고 간결한 최종 답을 만듭니다(⚔️ 토론). <b>Gemini · Groq · OpenRouter는 무료 티어</b>로 쓸 수 있습니다. API 키가 아예 없다면 <a href="ai-debate-kit.html">무료 토론 키트</a>를 쓰세요. <a href="invest.html">← 노트로</a></p>
   </header>
 
   <details class="card" id="settings">
@@ -137,8 +137,10 @@ const PROVIDERS = [
   { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "", auto: true, keyHint: "AIza...", keyUrl: "aistudio.google.com" },
   { id: "groq", name: "Groq", kind: "openai", free: true, model: "openai/gpt-oss-120b", keyHint: "gsk_...", keyUrl: "console.groq.com",
     url: "https://api.groq.com/openai/v1/chat/completions" },
+  { id: "openrouter", name: "OpenRouter", kind: "openai", free: true, model: "", auto: true, keyHint: "sk-or-...", keyUrl: "openrouter.ai",
+    url: "https://openrouter.ai/api/v1/chat/completions", note: "무료 모델 자동 선택" },
   { id: "glm", name: "GLM", kind: "openai", free: true, model: "glm-4.5-flash", keyHint: "Z.ai 키", keyUrl: "z.ai",
-    url: "https://api.z.ai/api/paas/v4/chat/completions", note: "중국 서버" },
+    url: "https://api.z.ai/api/paas/v4/chat/completions", note: "브라우저 호출 차단됨", noDefault: true },
   { id: "gpt", name: "GPT", kind: "openai", free: false, model: "gpt-5", keyHint: "sk-...", keyUrl: "platform.openai.com",
     url: "https://api.openai.com/v1/chat/completions" },
   { id: "claude", name: "Claude", kind: "claude", free: false, model: "claude-opus-5-5", keyHint: "sk-ant-...", keyUrl: "platform.claude.com" }
@@ -162,7 +164,7 @@ for (const p of PROVIDERS) {
   const g = document.createElement("div"); g.className = "grp"; g.style.setProperty("--c", `var(--${p.id})`);
   g.innerHTML = `<b>${p.name}<span class="tag ${p.free ? "free" : ""}">${p.free ? "무료 티어" : "유료"}</span>${p.note ? `<span class="tag">${p.note}</span>` : ""}</b>
     <label class="f">API 키 <span class="meta">${p.keyUrl}</span><input id="k_${p.id}" type="password" autocomplete="off" placeholder="${p.keyHint}"></label>
-    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.auto ? "자동: 최신 Flash 모델 (Flash만 사용)" : p.model}" list="dl_${p.id}"></label>
+    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.id === "gemini" ? "자동: 최신 Flash 모델 (Flash만 사용)" : p.auto ? "자동: 무료 모델" : p.model}" list="dl_${p.id}"></label>
     <datalist id="dl_${p.id}"></datalist>
     ${p.kind === "claude" ? "" : `<div class="row"><button class="btn" type="button" data-list="${p.id}" style="padding:5px 10px;font-size:13px">사용 가능한 모델 불러오기</button><span class="meta" id="ls_${p.id}"></span></div>`}`;
   $("keys").append(g);
@@ -216,7 +218,7 @@ function buildUses() {
   for (const p of PROVIDERS) {
     const l = document.createElement("label"); l.className = "chk";
     const i = document.createElement("input"); i.type = "checkbox"; i.dataset.id = p.id;
-    i.checked = p.id in prev ? prev[p.id] : (anyKey ? !!keyOf(p.id) : p.free);
+    i.checked = p.id in prev ? prev[p.id] : (anyKey ? !!keyOf(p.id) && !p.noDefault : p.free && !p.noDefault);
     i.onchange = updateMode;
     l.append(i, document.createTextNode(p.name + (keyOf(p.id) ? "" : " (키 없음)"))); box.append(l);
   }
@@ -235,27 +237,55 @@ function md(text) {
 }
 function notice(m) { $("notice").textContent = m; $("notice").hidden = !m; }
 function httpMsg(status, msg) {
-  const base = { 400: "잘못된 요청", 401: "API 키가 올바르지 않습니다", 403: "권한이 없습니다", 404: "모델 이름을 찾을 수 없습니다", 429: "요청 한도 초과 또는 잔액 부족" }[status] || "오류";
+  const base = { 400: "잘못된 요청", 401: "API 키가 올바르지 않습니다", 403: "권한이 없습니다", 404: "모델 이름을 찾을 수 없습니다", 429: "요청 한도 초과 또는 잔액 부족", 503: "서버 혼잡 (일시적)" }[status] || "오류";
   return `${base} (${status})${msg ? ": " + msg : ""}`;
 }
 async function netFetch(url, opts) {
   try { return await fetch(url, opts); }
-  catch { throw new Error("연결 실패. 인터넷 연결을 확인하세요. 계속되면 이 서비스가 브라우저에서의 직접 호출을 막고 있을 수 있습니다 (CORS)"); }
+  catch { throw new Error(/api\.z\.ai/.test(url) ? "GLM(Z.ai)은 브라우저에서 직접 호출하는 것을 막고 있어 이 페이지에서는 쓸 수 없습니다. 선택을 해제하고 OpenRouter를 쓰세요" : "연결 실패. 인터넷 연결을 확인하세요. 계속되면 이 서비스가 브라우저에서의 직접 호출을 막고 있을 수 있습니다 (CORS)"); }
+}
+
+// ---------- retry on temporary server errors ----------
+const RETRY_DELAYS = window.__retryDelays || [2000, 5000]; // wait 2s, then 5s
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const TRANSIENT = s => s === 500 || s === 502 || s === 503 || s === 504;
+async function postRetry(url, opts) {
+  let r = await netFetch(url, opts);
+  for (const d of RETRY_DELAYS) { if (!TRANSIENT(r.status)) break; await sleep(d); r = await netFetch(url, opts); }
+  return r;
 }
 
 // ---------- providers: stateless calls ----------
 // msgs: [{role: "user"|"assistant", content}] (Claude may also get raw content blocks)
+let orAuto = null;
+async function openrouterModel() {
+  const set = (cfg.m_openrouter || "").trim();
+  if (set) return set;
+  if (!orAuto) {
+    try {
+      const j = await (await fetch("https://openrouter.ai/api/v1/models")).json();
+      const free = (j.data || []).filter(m => m.id.endsWith(":free") && /text/.test(m.architecture?.output_modalities?.join(",") || "text"));
+      const pref = [/deepseek/, /qwen/, /gpt-oss/, /llama/, /gemma/, /mistral/, /glm/];
+      const score = id => { const i = pref.findIndex(r => r.test(id)); return i < 0 ? pref.length : i; };
+      orAuto = free.map(m => m.id).sort((a, b) => score(a) - score(b))[0] || null;
+    } catch {}
+    if (!orAuto) throw new Error("OpenRouter 무료 모델을 찾지 못했습니다. 설정에서 '사용 가능한 모델 불러오기'로 직접 고르세요");
+  }
+  const lbl = document.getElementById("ls_openrouter"); if (lbl) lbl.textContent = `자동 선택: ${orAuto}`;
+  return orAuto;
+}
 async function callOpenAICompat(id, msgs) {
-  const r = await netFetch(BY[id].url, {
+  const model = id === "openrouter" ? await openrouterModel() : modelOf(id);
+  const r = await postRetry(BY[id].url, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + keyOf(id) },
-    body: JSON.stringify({ model: modelOf(id), messages: msgs.map(m => ({ role: m.role, content: m.content })) })
+    body: JSON.stringify({ model, messages: msgs.map(m => ({ role: m.role, content: m.content })) })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message || j.message));
   const text = j.choices?.[0]?.message?.content ?? "";
   if (!text) throw new Error("빈 응답을 받았습니다");
-  return { text, model: j.model || modelOf(id) };
+  return { text, model: j.model || model };
 }
 // pick the newest general-purpose Flash model the key can use (Flash models have free-tier quota; Pro often doesn't)
 let geminiAuto = null;
@@ -263,6 +293,12 @@ async function geminiModels(key) {
   const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } });
   const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message));
   return (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+}
+function rankedFlash(names) {
+  const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+  const sort = a => a.sort((x, y) => ver(y) - ver(x) || (/preview/.test(x) - /preview/.test(y)));
+  const flash = names.filter(n => /flash/.test(n) && !/(image|tts|audio|live|embedding|exp|thinking)/.test(n));
+  return [...sort(flash.filter(n => !/lite/.test(n))), ...sort(flash.filter(n => /lite/.test(n)))];
 }
 function bestFlash(names) {
   const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
@@ -282,12 +318,20 @@ async function geminiModel() {
 }
 async function callGemini(msgs) {
   const contents = msgs.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-  const model = await geminiModel();
-  const r = await netFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+  const first = await geminiModel();
+  const req = m => postRetry(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": keyOf("gemini") },
     body: JSON.stringify({ contents })
   });
+  let model = first, r = await req(model);
+  if (TRANSIENT(r.status)) {
+    // still busy after retries: try the other Flash models once each
+    let others = [];
+    try { others = rankedFlash(await geminiModels(keyOf("gemini"))).filter(n => n !== first); } catch {}
+    for (const m of others) { const r2 = await req(m); if (!TRANSIENT(r2.status)) { model = m; r = r2; break; } }
+    if (model !== first && r.ok && !/flash/i.test(cfg.m_gemini || "")) geminiAuto = model; // stick with the working model this session
+  }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg = j.error?.message || "";
@@ -298,6 +342,7 @@ async function callGemini(msgs) {
       hint = `\n→ ${model}은(는) 무료 티어에서 쓸 수 없는 모델입니다 (한도 0).` + (rec ? ` 무료로 쓸 수 있는 ${rec}(으)로 바꾸세요.` : " 설정에서 이름에 flash가 들어간 모델로 바꾸세요.");
       if (rec === model) rec = null;
     }
+    if (TRANSIENT(r.status)) hint = "\n→ 구글 서버가 붐벼서 자동으로 다시 시도하고 다른 Flash 모델로도 바꿔 봤지만 모두 실패했습니다. 몇 분 뒤 다시 보내세요.";
     const err = new Error(httpMsg(r.status, msg.split("\n")[0]) + hint);
     if (rec) err.suggest = { id: "gemini", model: rec };
     throw err;
@@ -305,7 +350,7 @@ async function callGemini(msgs) {
   const cand = j.candidates?.[0];
   const text = (cand?.content?.parts || []).map(p => p.text || "").join("");
   if (!text) throw new Error("빈 응답 (차단 사유: " + (j.promptFeedback?.blockReason || cand?.finishReason || "알 수 없음") + ")");
-  return { text, model };
+  return { text, model: model === first ? model : `${model} (서버 혼잡으로 ${first} 대신 사용)` };
 }
 
 // Claude: official SDK, loaded only when Claude is used

@@ -134,7 +134,7 @@ const CFG_KEY = "ai-hub-config";
 // ---------- provider registry ----------
 // kind "openai": OpenAI-compatible chat completions endpoint
 const PROVIDERS = [
-  { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "gemini-3.1-pro-preview", keyHint: "AIza...", keyUrl: "aistudio.google.com" },
+  { id: "gemini", name: "Gemini", kind: "gemini", free: true, model: "", auto: true, keyHint: "AIza...", keyUrl: "aistudio.google.com" },
   { id: "groq", name: "Groq", kind: "openai", free: true, model: "openai/gpt-oss-120b", keyHint: "gsk_...", keyUrl: "console.groq.com",
     url: "https://api.groq.com/openai/v1/chat/completions" },
   { id: "glm", name: "GLM", kind: "openai", free: true, model: "glm-4.5-flash", keyHint: "Z.ai 키", keyUrl: "z.ai",
@@ -150,7 +150,7 @@ let cfg = {}; try { cfg = JSON.parse(localStorage.getItem(CFG_KEY) || "{}"); } c
 const keyOf = id => (cfg["k_" + id] || "").trim();
 const modelOf = id => (cfg["m_" + id] || "").trim() || BY[id].model;
 // retired default model names saved by older versions of this page: fall back to the current default
-const RETIRED = { gemini: ["gemini-2.5-pro", "gemini-2.5-flash"] };
+const RETIRED = { gemini: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-3.1-pro-preview"] };
 for (const [id, names] of Object.entries(RETIRED)) if (names.includes(cfg["m_" + id]) || names.includes(cfg[{ gemini: "mGemini" }[id]])) { delete cfg["m_" + id]; delete cfg.mGemini; }
 // migrate keys saved by the earlier version of this page
 for (const [o, n] of [["kGpt", "gpt"], ["kClaude", "claude"], ["kGemini", "gemini"]]) if (cfg[o] && !cfg["k_" + n]) cfg["k_" + n] = cfg[o];
@@ -161,7 +161,7 @@ for (const p of PROVIDERS) {
   const g = document.createElement("div"); g.className = "grp"; g.style.setProperty("--c", `var(--${p.id})`);
   g.innerHTML = `<b>${p.name}<span class="tag ${p.free ? "free" : ""}">${p.free ? "무료 티어" : "유료"}</span>${p.note ? `<span class="tag">${p.note}</span>` : ""}</b>
     <label class="f">API 키 <span class="meta">${p.keyUrl}</span><input id="k_${p.id}" type="password" autocomplete="off" placeholder="${p.keyHint}"></label>
-    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.model}" list="dl_${p.id}"></label>
+    <label class="f">모델<input id="m_${p.id}" autocomplete="off" placeholder="${p.auto ? "비워두면 자동 (무료 Flash 모델)" : p.model}" list="dl_${p.id}"></label>
     <datalist id="dl_${p.id}"></datalist>
     ${p.kind === "claude" ? "" : `<div class="row"><button class="btn" type="button" data-list="${p.id}" style="padding:5px 10px;font-size:13px">사용 가능한 모델 불러오기</button><span class="meta" id="ls_${p.id}"></span></div>`}`;
   $("keys").append(g);
@@ -256,9 +256,32 @@ async function callOpenAICompat(id, msgs) {
   if (!text) throw new Error("빈 응답을 받았습니다");
   return { text, model: j.model || modelOf(id) };
 }
+// pick the newest general-purpose Flash model the key can use (Flash models have free-tier quota; Pro often doesn't)
+let geminiAuto = null;
+async function geminiModels(key) {
+  const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", { headers: { "x-goog-api-key": key } });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(httpMsg(r.status, j.error?.message));
+  return (j.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace(/^models\//, ""));
+}
+function bestFlash(names) {
+  const ver = n => parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/) || [])[1] || 0);
+  const ok = names.filter(n => /flash/.test(n) && !/(lite|image|tts|audio|live|embedding|exp|thinking)/.test(n));
+  const pool = ok.length ? ok : names.filter(n => /flash/.test(n));
+  return pool.sort((a, b) => ver(b) - ver(a) || (/preview/.test(a) - /preview/.test(b)))[0] || null;
+}
+async function geminiModel() {
+  const set = (cfg.m_gemini || "").trim();
+  if (set) return set;
+  if (!geminiAuto) {
+    try { geminiAuto = bestFlash(await geminiModels(keyOf("gemini"))); } catch {}
+    if (!geminiAuto) throw new Error("사용할 수 있는 Gemini Flash 모델을 찾지 못했습니다. 설정에서 '사용 가능한 모델 불러오기'로 직접 고르세요");
+  }
+  return geminiAuto;
+}
 async function callGemini(msgs) {
   const contents = msgs.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-  const r = await netFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelOf("gemini"))}:generateContent`, {
+  const model = await geminiModel();
+  const r = await netFetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": keyOf("gemini") },
     body: JSON.stringify({ contents })
@@ -266,15 +289,21 @@ async function callGemini(msgs) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg = j.error?.message || "";
-    const rec = msg.match(/use (?:models\/)?([\w.\-]+)/i)?.[1];
-    const err = new Error(httpMsg(r.status, msg) + (rec ? `\n→ 설정에서 Gemini 모델을 ${rec}(으)로 바꾸세요.` : ""));
+    let rec = msg.match(/use (?:models\/)?([\w.\-]+)/i)?.[1];
+    let hint = rec ? `\n→ 설정에서 Gemini 모델을 ${rec}(으)로 바꾸세요.` : "";
+    if (r.status === 429 && /free_tier/.test(msg) && /limit: 0/.test(msg)) {
+      try { rec = bestFlash(await geminiModels(keyOf("gemini"))); } catch {}
+      hint = `\n→ ${model}은(는) 무료 티어에서 쓸 수 없는 모델입니다 (한도 0).` + (rec ? ` 무료로 쓸 수 있는 ${rec}(으)로 바꾸세요.` : " 설정에서 이름에 flash가 들어간 모델로 바꾸세요.");
+      if (rec === model) rec = null;
+    }
+    const err = new Error(httpMsg(r.status, msg.split("\n")[0]) + hint);
     if (rec) err.suggest = { id: "gemini", model: rec };
     throw err;
   }
   const cand = j.candidates?.[0];
   const text = (cand?.content?.parts || []).map(p => p.text || "").join("");
   if (!text) throw new Error("빈 응답 (차단 사유: " + (j.promptFeedback?.blockReason || cand?.finishReason || "알 수 없음") + ")");
-  return { text, model: modelOf("gemini") };
+  return { text, model };
 }
 
 // Claude: official SDK, loaded only when Claude is used

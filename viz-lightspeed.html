@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>광속과 에너지</title>
+<style>
+:root{--surface:#ffffff;--text:#191919;--text2:#666666;--grid:#e6e6e6;--axis:#b3b3b3;--s1:#257de0;--tipbg:#ffffff;--tipbd:#d9d9d9}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--surface:#191919;--text:#efefef;--text2:#9c9c9c;--grid:#2e2e2e;--axis:#555;--s1:#338ced;--tipbg:#242424;--tipbd:#3a3a3a}}
+:root[data-theme="dark"]{--surface:#191919;--text:#efefef;--text2:#9c9c9c;--grid:#2e2e2e;--axis:#555;--s1:#338ced;--tipbg:#242424;--tipbd:#3a3a3a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;padding:24px 16px}
+.wrap{max-width:760px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--text2);font-size:14px;margin:0 0 16px;line-height:1.5}
+.chart{position:relative}
+svg{width:100%;height:auto;display:block;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--tipbg);border:1px solid var(--tipbd);border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.4;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip b{font-variant-numeric:tabular-nums}
+.note{font-size:14px;line-height:1.6;color:var(--text);margin-top:16px}
+.note li{margin-bottom:4px}
+table{border-collapse:collapse;margin-top:12px;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--grid);padding:6px 14px 6px 0;text-align:left}
+th{color:var(--text2);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>광속에 가까울수록 필요한 에너지 (γ)</h1>
+  <p class="sub">γ = 1 / √(1 − v²/c²). 정지 상태 에너지(mc²)의 몇 배인지 보여 줘요. 속도가 c에 다가가면 γ는 끝없이 커져요.</p>
+  <div class="chart" id="chart">
+    <svg id="svg" role="img" aria-label="속도 대비 감마 그래프"></svg>
+    <div class="tip" id="tip"></div>
+  </div>
+  <ul class="note">
+    <li>0.5c까지는 거의 평평해요 (γ ≈ 1.15). 일상 속도에선 상대성 효과가 거의 없어요.</li>
+    <li>0.9c를 넘으면 급격히 올라가요. 0.99c에서 약 7배, 0.999c에서 약 22배예요.</li>
+    <li>점선(v = c)에는 영원히 닿지 않아요. 질량이 있는 물체는 광속에 도달할 수 없어요.</li>
+  </ul>
+  <table aria-label="표로 보기">
+    <thead><tr><th>속도</th><th>γ (에너지 배수)</th></tr></thead>
+    <tbody id="tbl"></tbody>
+  </table>
+</div>
+<script>
+(function(){
+  const W=Math.max(340,Math.min(720,document.getElementById('chart').clientWidth)),H=Math.round(Math.max(320,W*0.58)),m={l:52,r:16,t:16,b:52};
+  document.getElementById('svg').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const pw=W-m.l-m.r, ph=H-m.t-m.b, YMAX=25;
+  const x=v=>m.l+v*pw, y=g=>m.t+ph-(Math.min(g,YMAX)/YMAX)*ph;
+  const gam=v=>1/Math.sqrt(1-v*v);
+  const svg=document.getElementById('svg'), NS='http://www.w3.org/2000/svg';
+  const el=(n,a,t)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;svg.appendChild(e);return e};
+  const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  // grid + y ticks
+  for(let g=0;g<=YMAX;g+=5){el('line',{x1:m.l,x2:m.l+pw,y1:y(g),y2:y(g),stroke:'var(--grid)','stroke-width':1});
+    el('text',{x:m.l-10,y:y(g)+4,'text-anchor':'end','font-size':12,fill:'var(--text2)'},g)}
+  // x ticks
+  [0,0.2,0.4,0.6,0.8,1].forEach(v=>{el('text',{x:x(v),y:m.t+ph+20,'text-anchor':'middle','font-size':12,fill:'var(--text2)'},v===1?'c':v+'c')});
+  el('line',{x1:m.l,x2:m.l+pw,y1:m.t+ph,y2:m.t+ph,stroke:'var(--axis)','stroke-width':1});
+  el('text',{x:m.l+pw/2,y:H-8,'text-anchor':'middle','font-size':13,fill:'var(--text2)'},'속도 (광속 c 대비)');
+  el('text',{x:14,y:m.t+ph/2,'text-anchor':'middle','font-size':13,fill:'var(--text2)',transform:`rotate(-90 14 ${m.t+ph/2})`},'γ (정지 에너지의 몇 배)');
+  // asymptote
+  el('line',{x1:x(1),x2:x(1),y1:m.t,y2:m.t+ph,stroke:'var(--text2)','stroke-width':1.5,'stroke-dasharray':'5 5'});
+  el('text',{x:x(1)-6,y:m.t+ph*0.55,'text-anchor':'end','font-size':12,fill:'var(--text2)'},'v = c (도달 불가) →');
+  // curve
+  let d='';const N=600;
+  for(let i=0;i<=N;i++){const v=0.9989*(i/N)+(i===N?0:0);const g=gam(v);d+=(i?'L':'M')+x(v).toFixed(2)+' '+y(g).toFixed(2)}
+  // dense tail near c
+  for(let k=1;k<=40;k++){const v=0.9989+(0.9992-0.9989)*k/40;d+='L'+x(v).toFixed(2)+' '+y(gam(v)).toFixed(2)}
+  el('path',{d,fill:'none',stroke:'var(--s1)','stroke-width':2,'stroke-linejoin':'round','stroke-linecap':'round'});
+  // labeled points
+  const pts=[[0.5,'0.5c'],[0.9,'0.9c'],[0.99,'0.99c'],[0.999,'0.999c']];
+  const tb=document.getElementById('tbl');
+  pts.forEach(([v,lab],i)=>{const g=gam(v);
+    el('circle',{cx:x(v),cy:y(g),r:5,fill:'var(--s1)',stroke:'var(--surface)','stroke-width':2});
+    const lx=x(v)-10, anchor='end', ly=i===3?y(g)+4:(i===2?y(g)+4:y(g)-10);
+    el('text',{x:lx,y:ly,'text-anchor':anchor,'font-size':12,fill:'var(--text)'},`${lab}: γ≈${g.toFixed(g<10?2:1)}`);
+    tb.insertAdjacentHTML('beforeend',`<tr><td>${lab}</td><td>${g.toFixed(2)}</td></tr>`)});
+  tb.insertAdjacentHTML('beforeend','<tr><td>0.9999c</td><td>70.71</td></tr><tr><td>→ c</td><td>∞</td></tr>');
+  // hover crosshair
+  const cross=el('line',{y1:m.t,y2:m.t+ph,stroke:'var(--axis)','stroke-width':1,opacity:0});
+  const dot=el('circle',{r:5,fill:'var(--s1)',stroke:'var(--surface)','stroke-width':2,opacity:0});
+  const hit=el('rect',{x:m.l,y:m.t,width:pw,height:ph,fill:'transparent'});
+  const tip=document.getElementById('tip'), box=document.getElementById('chart');
+  function move(ev){const r=svg.getBoundingClientRect();const sx=(ev.clientX-r.left)*W/r.width;
+    let v=Math.max(0,Math.min(0.9992,(sx-m.l)/pw));const g=gam(v);
+    cross.setAttribute('x1',x(v));cross.setAttribute('x2',x(v));cross.setAttribute('opacity',1);
+    dot.setAttribute('cx',x(v));dot.setAttribute('cy',y(g));dot.setAttribute('opacity',g<=YMAX?1:0);
+    tip.innerHTML=`속도 <b>${v.toFixed(v>0.99?4:3)}c</b><br>γ ≈ <b>${g<100?g.toFixed(2):Math.round(g)}</b>배`;
+    const px=x(v)*r.width/W, py=Math.max(8,y(g)*r.height/H-60);
+    tip.style.left=Math.min(px+12,r.width-140)+'px';tip.style.top=py+'px';tip.style.opacity=1}
+  hit.addEventListener('pointermove',move);hit.addEventListener('pointerdown',move);
+  hit.addEventListener('pointerleave',()=>{tip.style.opacity=0;cross.setAttribute('opacity',0);dot.setAttribute('opacity',0)});
+})();
+</script>
+</body>
+</html>
